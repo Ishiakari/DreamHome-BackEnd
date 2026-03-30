@@ -1,0 +1,63 @@
+# =========================
+# 1. Python Core
+# =========================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =========================
+# 2. Virtual Environments
+# =========================
+# Never commit your local dependencies
+venv/
+env/
+.venv/
+.env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# =========================
+# 3. Environment Variables (CRITICAL)
+# =========================
+# Keeps your Django SECRET_KEY and Database URLs safe
+.env
+.env.local
+
+# =========================
+# 4. Django Specifics
+# =========================
+# Ignore local SQLite databases
+*.sqlite3
+db.sqlite3
+
+# Ignore collected static files (generated during deployment)
+staticfiles/
+static_root/
+
+# Ignore user-uploaded media files (like property photos or lease PDFs)
+media/
+media_root/
+
+# =========================
+# 5. OS & Editor Junk
+# =========================
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# 6. Testing & Logs
+# =========================
+.pytest_cache/
+htmlcov/
+.coverage
+*.log
