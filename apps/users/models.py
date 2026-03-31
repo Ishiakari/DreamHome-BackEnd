@@ -10,6 +10,8 @@ class Staff(models.Model):
 class NextOfKin(models.Model):
     staff = models.OneToOneField(Staff, on_delete=models.CASCADE, primary_key=True, related_name='next_of_kin')
     full_name = models.CharField(max_length=150)
+    relationship = models.CharField(max_length=50)
+    
     
 class Renter(models.Model):
     renter_no = models.CharField(max_length=10, primary_key=True)
