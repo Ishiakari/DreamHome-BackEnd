@@ -16,6 +16,9 @@ class NextOfKin(models.Model):
     
     class Meta:
         verbose_name_plural = "Next of Kin"
+        
+    def __str__(self):
+        return f"{self.full_name} ({self.relationship} to {self.staff.staff_no})"
     
     
 class Renter(models.Model):
