@@ -4,6 +4,8 @@ from django.db import models
 class PropertyForRent(models.Model):
     property_no = models.CharField(max_length=10, primary_key=True)
     street = models.CharField(max_length=255)
+    area = models.CharField(max_length=255, blank=True, null=True)
+    
     
 class PropertyViewing(models.Model):
     d = 50
