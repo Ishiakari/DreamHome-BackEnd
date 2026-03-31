@@ -8,3 +8,6 @@ class PropertyForRent(models.Model):
 class PropertyViewing(models.Model):
     d = 50
     
+    
+class PropertyInspection(models.Model):
+    d = 50
