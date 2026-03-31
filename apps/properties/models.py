@@ -9,7 +9,7 @@ class PropertyForRent(models.Model):
     postcode = models.CharField(max_length=20)
     property_type = models.CharField(max_length=50) # 'type' is a reserved Python keyword, so we use 'property_type'
     no_of_rooms = models.IntegerField()
-    
+    monthly_rent = models.DecimalField(max_digits=10, decimal_places=2)
     
     
         
