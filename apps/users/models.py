@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 
 class Staff(models.Model):
-    d = 50
+    staff_no = models.CharField(max_length=10, primary_key=True)
     
 
 
