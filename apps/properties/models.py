@@ -28,6 +28,7 @@ class PropertyForRent(models.Model):
     
 class PropertyViewing(models.Model):
     property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='viewings')
+    renter = models.ForeignKey('users.Renter', on_delete=models.CASCADE, related_name='viewings')
     
     
 class PropertyInspection(models.Model):
