@@ -18,6 +18,8 @@ class PropertyForRent(models.Model):
     
     class Meta:
         verbose_name_plural = "Properties for Rent"
+        
+        
     
         
 class PropertyViewing(models.Model):
