@@ -13,7 +13,7 @@ class PropertyForRent(models.Model):
     status = models.CharField(max_length=50)
     # Relationships
     owner = models.ForeignKey('users.PropertyOwner', on_delete=models.CASCADE, related_name='properties')
-    
+    staff = models.ForeignKey('users.Staff', on_delete=models.SET_NULL, null=True, related_name='managed_properties')
     
     
         
