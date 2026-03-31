@@ -17,9 +17,9 @@ class Staff(models.Model):
     
     
     # Optional fields based on role
-    typing_speed = models.IntegerField(blank=True, null=True, help_text="Secretarial staff only")\
+    typing_speed = models.IntegerField(blank=True, null=True, help_text="Secretarial staff only")
     manager_start_date = models.DateField(blank=True, null=True, help_text="Managers only")
-    
+    bonus_payment = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     
     
     
