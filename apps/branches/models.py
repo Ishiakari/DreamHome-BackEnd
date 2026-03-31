@@ -12,3 +12,6 @@ class Branch(models.Model):
     
     class Meta:
         verbose_name_plural = "Branches"
+        
+    def __str__(self):
+        return f"{self.branch_no} - {self.city}"
