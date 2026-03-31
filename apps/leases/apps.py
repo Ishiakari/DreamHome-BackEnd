@@ -1,6 +1,5 @@
 from django.apps import AppConfig
 
-
 class LeasesConfig(AppConfig):
-    name = 'leases'
+    default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.leases'
