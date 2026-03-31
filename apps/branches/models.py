@@ -2,4 +2,4 @@ from django.db import models
 
 # Create your models here.
 class Branch(models.Model):
-    d = 50
+    name = models.CharField(max_length=10, primary_key=True, help_text="Unique branch identifier (e.g., B85)")
