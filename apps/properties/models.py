@@ -7,7 +7,7 @@ class PropertyForRent(models.Model):
     area = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=100)
     postcode = models.CharField(max_length=20)
-    
+    property_type = models.CharField(max_length=50) # 'type' is a reserved Python keyword, so we use 'property_type'
     
 class PropertyViewing(models.Model):
     d = 50
