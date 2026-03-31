@@ -28,6 +28,9 @@ class Staff(models.Model):
     # Self-referencing Foreign Key for Supervisor
     supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subordinates')
     
+    
+    class Meta:
+        verbose_name_plural = "Staff"
 
 
 class NextOfKin(models.Model):
