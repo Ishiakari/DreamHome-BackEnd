@@ -55,4 +55,4 @@ class PropertyInspection(models.Model):
         return f"Inspection for {self.property} on {self.inspection_date}"
     
 class Advertisement(models.Model):
-    d = 50
+    property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='advertisements')
