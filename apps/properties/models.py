@@ -54,7 +54,11 @@ class PropertyInspection(models.Model):
     def __str__(self):
         return f"Inspection for {self.property} on {self.inspection_date}"
     
+    
+    
 class Advertisement(models.Model):
     property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='advertisements')
     newspaper_name = models.CharField(max_length=150)
     advert_date = models.DateField()
+    
+    
