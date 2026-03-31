@@ -5,6 +5,7 @@ class PropertyForRent(models.Model):
     property_no = models.CharField(max_length=10, primary_key=True)
     street = models.CharField(max_length=255)
     area = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=100)
     
     
 class PropertyViewing(models.Model):
