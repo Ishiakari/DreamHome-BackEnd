@@ -12,6 +12,7 @@ class NextOfKin(models.Model):
     full_name = models.CharField(max_length=150)
     relationship = models.CharField(max_length=50)
     address = models.CharField(max_length=255)
+    telephone_no = models.CharField(max_length=50)
     
     
 class Renter(models.Model):
