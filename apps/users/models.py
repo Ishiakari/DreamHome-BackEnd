@@ -13,6 +13,7 @@ class Staff(models.Model):
     nin = models.CharField(max_length=50, verbose_name="National Insurance Number")
     position = models.CharField(max_length=50)
     salary = models.DecimalField(max_digits=10, decimal_places=2)
+    date_joined = models.DateField()
     
     
     
