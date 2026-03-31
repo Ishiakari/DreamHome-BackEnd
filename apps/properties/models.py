@@ -46,6 +46,10 @@ class PropertyInspection(models.Model):
     inspection_date = models.DateField()
     comments = models.TextField(blank=True, null=True)
     
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['property', 'inspection_date'], name='unique_property_inspection')
+        ]
     
     
     
