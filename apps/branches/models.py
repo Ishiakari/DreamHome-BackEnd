@@ -9,3 +9,6 @@ class Branch(models.Model):
     postcode = models.CharField(max_length=20)
     telephone_no = models.CharField(max_length=50)
     fax_no = models.CharField(max_length=50, blank=True, null=True)
+    
+    class Meta:
+        verbose_name_plural = "Branches"
