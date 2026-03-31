@@ -16,3 +16,6 @@ class LeaseAgreement(models.Model):
     property = models.ForeignKey('properties.PropertyForRent', on_delete=models.CASCADE, related_name='leases')
     staff = models.ForeignKey('users.Staff', on_delete=models.SET_NULL, null=True, related_name='arranged_leases')
     
+    
+    def __str__(self):
+        return f"Lease {self.lease_no} for {self.property}"
