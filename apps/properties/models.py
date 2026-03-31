@@ -56,3 +56,5 @@ class PropertyInspection(models.Model):
     
 class Advertisement(models.Model):
     property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='advertisements')
+    newspaper_name = models.CharField(max_length=150)
+    advert_date = models.DateField()
