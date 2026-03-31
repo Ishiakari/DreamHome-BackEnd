@@ -7,7 +7,8 @@ class Staff(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
-    
+    telephone_no = models.CharField(max_length=50)
+        
     
 
 
