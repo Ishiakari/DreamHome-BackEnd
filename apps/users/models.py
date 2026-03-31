@@ -14,6 +14,9 @@ class NextOfKin(models.Model):
     address = models.CharField(max_length=255)
     telephone_no = models.CharField(max_length=50)
     
+    class Meta:
+        verbose_name_plural = "Next of Kin"
+    
     
 class Renter(models.Model):
     renter_no = models.CharField(max_length=10, primary_key=True)
