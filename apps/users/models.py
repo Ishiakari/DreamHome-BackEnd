@@ -15,4 +15,4 @@ class Renter(models.Model):
     
     
 class PropertyOwner(models.Model):
-    d = 50
+    owner_no = models.CharField(max_length=10, primary_key=True)
