@@ -11,6 +11,8 @@ class PropertyForRent(models.Model):
     no_of_rooms = models.IntegerField()
     monthly_rent = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=50)
+    # Relationships
+    
     
         
 class PropertyViewing(models.Model):
