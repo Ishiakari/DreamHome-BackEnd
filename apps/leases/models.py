@@ -10,3 +10,6 @@ class LeaseAgreement(models.Model):
     rent_start = models.DateField()
     rent_finish = models.DateField()
     duration = models.IntegerField(help_text="Duration in months")
+    
+    # Relationships
+    renter = models.ForeignKey('users.Renter', on_delete=models.CASCADE, related_name='leases')
