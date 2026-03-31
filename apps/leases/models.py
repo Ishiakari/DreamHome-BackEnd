@@ -7,3 +7,4 @@ class LeaseAgreement(models.Model):
     payment_method = models.CharField(max_length=50)
     deposit = models.DecimalField(max_digits=10, decimal_places=2)
     deposit_paid = models.BooleanField(default=False)
+    rent_start = models.DateField()
