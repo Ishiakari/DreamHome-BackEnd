@@ -2,7 +2,7 @@ from django.db import models
 
 # Create your models here.
 class PropertyForRent(models.Model):
-    d = 50
+    property_no = models.CharField(max_length=10, primary_key=True)
     
     
 class PropertyViewing(models.Model):
