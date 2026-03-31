@@ -9,3 +9,4 @@ class LeaseAgreement(models.Model):
     deposit_paid = models.BooleanField(default=False)
     rent_start = models.DateField()
     rent_finish = models.DateField()
+    duration = models.IntegerField(help_text="Duration in months")
