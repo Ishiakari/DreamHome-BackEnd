@@ -11,7 +11,10 @@ class Staff(models.Model):
     sex = models.CharField(max_length=10)
     dob = models.DateField(verbose_name="Date of Birth")
     nin = models.CharField(max_length=50, verbose_name="National Insurance Number")
-        
+    position = models.CharField(max_length=50)
+    
+    
+    
     
 
 
