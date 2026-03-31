@@ -66,3 +66,5 @@ class Advertisement(models.Model):
             models.UniqueConstraint(fields=['property', 'newspaper_name', 'advert_date'], name='unique_property_advert')
         ]
     
+    def __str__(self):
+        return f"{self.property} advertised in {self.newspaper_name} on {self.advert_date}"
