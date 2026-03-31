@@ -8,3 +8,4 @@ class Branch(models.Model):
     city = models.CharField(max_length=100)
     postcode = models.CharField(max_length=20)
     telephone_no = models.CharField(max_length=50)
+    fax_no = models.CharField(max_length=50, blank=True, null=True)
