@@ -1,3 +1,20 @@
-from django.shortcuts import render
+from rest_framework import generics, serializers
 
-# Create your views here.
+from .models import Branch
+
+
+class BranchSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Branch
+		fields = "__all__"
+
+
+class BranchListCreateView(generics.ListCreateAPIView):
+	queryset = Branch.objects.all()
+	serializer_class = BranchSerializer
+
+
+class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
+	queryset = Branch.objects.all()
+	serializer_class = BranchSerializer
+	lookup_field = "name"
