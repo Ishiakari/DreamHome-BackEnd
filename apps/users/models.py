@@ -16,6 +16,10 @@ class Staff(models.Model):
     date_joined = models.DateField()
     
     
+    # Optional fields based on role
+    typing_speed = models.IntegerField(blank=True, null=True, help_text="Secretarial staff only")
+    
+    
     
     
 
