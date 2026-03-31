@@ -10,7 +10,8 @@ class Staff(models.Model):
     telephone_no = models.CharField(max_length=50)
     sex = models.CharField(max_length=10)
     dob = models.DateField(verbose_name="Date of Birth")
-    
+    nin = models.CharField(max_length=50, verbose_name="National Insurance Number")
+        
     
 
 
