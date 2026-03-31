@@ -16,6 +16,7 @@ class Renter(models.Model):
     last_name = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
     telephone_no = models.CharField(max_length=50)
+    pref_property_type = models.CharField(max_length=50, blank=True, null=True)
     
     
 class PropertyOwner(models.Model):
