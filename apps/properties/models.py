@@ -30,7 +30,7 @@ class PropertyViewing(models.Model):
     property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='viewings')
     renter = models.ForeignKey('users.Renter', on_delete=models.CASCADE, related_name='viewings')
     view_date = models.DateField()
-    
+    comments = models.TextField(blank=True, null=True)
     
 class PropertyInspection(models.Model):
     d = 50
