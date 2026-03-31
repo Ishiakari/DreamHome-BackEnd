@@ -10,3 +10,4 @@ class Staff(models.Model):
 class NextOfKin(models.Model):
     d = 50
     
+    
