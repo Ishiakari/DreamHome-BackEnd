@@ -36,7 +36,10 @@ class PropertyViewing(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['property', 'renter', 'view_date'], name='unique_property_viewing')
         ]
-        
+    
+    def __str__(self):
+        return f"{self.renter} viewed {self.property} on {self.view_date}"
+    
 class PropertyInspection(models.Model):
     d = 50
     
