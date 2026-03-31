@@ -5,3 +5,8 @@ from django.db import models
 class Staff(models.Model):
     d = 50
     
+
+
+class NextOfKin(models.Model):
+    d = 50
+    
