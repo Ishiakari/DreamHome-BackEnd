@@ -32,6 +32,11 @@ class PropertyViewing(models.Model):
     view_date = models.DateField()
     comments = models.TextField(blank=True, null=True)
     
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['property', 'renter', 'view_date'], name='unique_property_viewing')
+        ]
+        
 class PropertyInspection(models.Model):
     d = 50
     
