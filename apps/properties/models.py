@@ -16,7 +16,8 @@ class PropertyForRent(models.Model):
     staff = models.ForeignKey('users.Staff', on_delete=models.SET_NULL, null=True, related_name='managed_properties')
     branch = models.ForeignKey('branches.Branch', on_delete=models.CASCADE, related_name='properties')
     
-    
+    class Meta:
+        verbose_name_plural = "Properties for Rent"
     
         
 class PropertyViewing(models.Model):
