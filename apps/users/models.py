@@ -22,7 +22,8 @@ class Staff(models.Model):
     bonus_payment = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     car_allowance = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     
-    
+    # Relationships
+    branch = models.ForeignKey('branches.Branch', on_delete=models.SET_NULL, null=True, related_name='staff')
     
 
 
