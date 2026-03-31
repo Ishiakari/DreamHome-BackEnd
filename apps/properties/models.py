@@ -51,7 +51,8 @@ class PropertyInspection(models.Model):
             models.UniqueConstraint(fields=['property', 'inspection_date'], name='unique_property_inspection')
         ]
     
-    
+    def __str__(self):
+        return f"Inspection for {self.property} on {self.inspection_date}"
     
 class Advertisement(models.Model):
     d = 50
