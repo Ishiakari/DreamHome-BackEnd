@@ -9,7 +9,7 @@ class Staff(models.Model):
     address = models.CharField(max_length=255)
     telephone_no = models.CharField(max_length=50)
     sex = models.CharField(max_length=10)
-    
+    dob = models.DateField(verbose_name="Date of Birth")
 
 
 class NextOfKin(models.Model):
