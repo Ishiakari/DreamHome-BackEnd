@@ -23,7 +23,9 @@ class PropertyForRent(models.Model):
     def __str__(self):
         return f"{self.property_no} - {self.street}, {self.city}"
     
-        
+    
+    
+    
 class PropertyViewing(models.Model):
     d = 50
     
