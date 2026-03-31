@@ -13,3 +13,6 @@ class NextOfKin(models.Model):
 class Renter(models.Model):
     d = 50
     
+    
+class PropertyOwner(models.Model):
+    d = 50
