@@ -12,6 +12,7 @@ class NextOfKin(models.Model):
     
 class Renter(models.Model):
     renter_no = models.CharField(max_length=10, primary_key=True)
+    first_name = models.CharField(max_length=100)
     
     
 class PropertyOwner(models.Model):
