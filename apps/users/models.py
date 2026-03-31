@@ -25,6 +25,9 @@ class Staff(models.Model):
     # Relationships
     branch = models.ForeignKey('branches.Branch', on_delete=models.SET_NULL, null=True, related_name='staff')
     
+    # Self-referencing Foreign Key for Supervisor
+    supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subordinates')
+    
 
 
 class NextOfKin(models.Model):
