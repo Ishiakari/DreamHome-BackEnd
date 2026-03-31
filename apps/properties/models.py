@@ -12,6 +12,8 @@ class PropertyForRent(models.Model):
     monthly_rent = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=50)
     # Relationships
+    owner = models.ForeignKey('users.PropertyOwner', on_delete=models.CASCADE, related_name='properties')
+    
     
     
         
