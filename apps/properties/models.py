@@ -11,3 +11,6 @@ class PropertyViewing(models.Model):
     
 class PropertyInspection(models.Model):
     d = 50
+    
+class Advertisement(models.Model):
+    d = 50
