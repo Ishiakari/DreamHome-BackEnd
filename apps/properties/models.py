@@ -65,3 +65,4 @@ class Advertisement(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['property', 'newspaper_name', 'advert_date'], name='unique_property_advert')
         ]
+    
