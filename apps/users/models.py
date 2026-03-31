@@ -6,6 +6,7 @@ class Staff(models.Model):
     staff_no = models.CharField(max_length=10, primary_key=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
+    address = models.CharField(max_length=255)
     
     
 
