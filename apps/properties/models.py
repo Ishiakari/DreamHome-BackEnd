@@ -19,7 +19,8 @@ class PropertyForRent(models.Model):
     class Meta:
         verbose_name_plural = "Properties for Rent"
         
-        
+    def __str__(self):
+        return f"{self.property_no} - {self.street}, {self.city}"
     
         
 class PropertyViewing(models.Model):
