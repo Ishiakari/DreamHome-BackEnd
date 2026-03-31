@@ -4,3 +4,7 @@ from django.db import models
 class PropertyForRent(models.Model):
     d = 50
     
+    
+class PropertyViewing(models.Model):
+    d = 50
+    
