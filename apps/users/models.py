@@ -31,7 +31,9 @@ class Staff(models.Model):
     
     class Meta:
         verbose_name_plural = "Staff"
-
+        
+    def __str__(self):
+        return f"{self.staff_no} - {self.first_name} {self.last_name}"
 
 class NextOfKin(models.Model):
     staff = models.OneToOneField(Staff, on_delete=models.CASCADE, primary_key=True, related_name='next_of_kin')
