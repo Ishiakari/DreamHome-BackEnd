@@ -11,7 +11,7 @@ class NextOfKin(models.Model):
     d = 50
     
 class Renter(models.Model):
-    d = 50
+    renter_no = models.CharField(max_length=10, primary_key=True)
     
     
 class PropertyOwner(models.Model):
