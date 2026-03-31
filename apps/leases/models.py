@@ -8,3 +8,4 @@ class LeaseAgreement(models.Model):
     deposit = models.DecimalField(max_digits=10, decimal_places=2)
     deposit_paid = models.BooleanField(default=False)
     rent_start = models.DateField()
+    rent_finish = models.DateField()
