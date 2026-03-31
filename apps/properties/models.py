@@ -27,7 +27,7 @@ class PropertyForRent(models.Model):
     
     
 class PropertyViewing(models.Model):
-    d = 50
+    property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='viewings')
     
     
 class PropertyInspection(models.Model):
