@@ -41,7 +41,8 @@ class PropertyViewing(models.Model):
         return f"{self.renter} viewed {self.property} on {self.view_date}"
     
 class PropertyInspection(models.Model):
-    d = 50
+    property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='inspections')
+    
     
 class Advertisement(models.Model):
     d = 50
