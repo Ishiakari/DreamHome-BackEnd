@@ -61,4 +61,7 @@ class Advertisement(models.Model):
     newspaper_name = models.CharField(max_length=150)
     advert_date = models.DateField()
     
-    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['property', 'newspaper_name', 'advert_date'], name='unique_property_advert')
+        ]
