@@ -6,3 +6,4 @@ class Branch(models.Model):
     street = models.CharField(max_length=255)
     area = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=100)
+    postcode = models.CharField(max_length=20)
