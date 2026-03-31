@@ -17,6 +17,7 @@ class Renter(models.Model):
     address = models.CharField(max_length=255)
     telephone_no = models.CharField(max_length=50)
     pref_property_type = models.CharField(max_length=50, blank=True, null=True)
+    max_monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     
     
 class PropertyOwner(models.Model):
