@@ -70,7 +70,7 @@ class Renter(models.Model):
     # 🌟 NEW FIELDS
     email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
-
+    birthdate = models.DateField(blank=True, null=True)
 
 
     address = models.CharField(max_length=255)
