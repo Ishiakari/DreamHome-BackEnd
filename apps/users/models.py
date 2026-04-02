@@ -7,6 +7,9 @@ GENDER_CHOICES = [
     ('P', 'Prefer not to say')
 ]
 
+ROLE_CHOICES = [
+    
+]
 
 # Create your models here.
 
