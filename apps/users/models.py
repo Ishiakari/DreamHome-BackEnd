@@ -61,6 +61,8 @@ class NextOfKin(models.Model):
     
     
 class Renter(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='renter_profile')
+    
     renter_no = models.CharField(max_length=10, primary_key=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
