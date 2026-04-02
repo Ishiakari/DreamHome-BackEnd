@@ -1,5 +1,13 @@
 from django.db import models
 
+GENDER_CHOICES = [
+    ('M', 'Male'),
+    ('F', 'Female'),
+    ('O', 'Other'),
+    ('P', 'Prefer not to say')
+]
+
+
 # Create your models here.
 
 class Staff(models.Model):
@@ -15,7 +23,6 @@ class Staff(models.Model):
     salary = models.DecimalField(max_digits=10, decimal_places=2)
     date_joined = models.DateField()
     
-    
     # Optional fields based on role
     typing_speed = models.IntegerField(blank=True, null=True, help_text="Secretarial staff only")
     manager_start_date = models.DateField(blank=True, null=True, help_text="Managers only")
@@ -27,7 +34,6 @@ class Staff(models.Model):
     
     # Self-referencing Foreign Key for Supervisor
     supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subordinates')
-    
     
     class Meta:
         verbose_name_plural = "Staff"
