@@ -89,6 +89,15 @@ class PropertyOwner(models.Model):
     owner_no = models.CharField(max_length=10, primary_key=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
+
+
+    # 🌟 NEW FIELDS
+    email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
+    birthdate = models.DateField(blank=True, null=True)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='OWNER')
+
+
     address = models.CharField(max_length=255)
     telephone_no = models.CharField(max_length=50)
     
