@@ -1,5 +1,7 @@
 from django.db import models
+from django.contrib.auth.models import User
 
+# .\venv\Scripts\activate
 # python manage.py makemigrations
 # python manage.py migrate
 
