@@ -8,9 +8,9 @@ GENDER_CHOICES = [
 ]
 
 ROLE_CHOICES = [
-    (),
-    (),
-    ()
+    ('RENTER'  , 'Renter'),
+    ('PROPERTY_OWNER', 'Property Owner'),
+    ('BOTH', 'Both')
 ]
 
 # Create your models here.
