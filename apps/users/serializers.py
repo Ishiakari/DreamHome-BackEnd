@@ -50,3 +50,21 @@ class ClientSerializer(serializers.ModelSerializer):
         client = Client.objects.create(user=user, **validated_data)
         
         return client
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Add custom claims (Data we want inside the token)
+        try:
+            client_profile = user.client_profile # This uses the related_name from your model
+            token['role'] = client_profile.role
+            token['first_name'] = client_profile.first_name
+        except:
+            token['role'] = 'ADMIN' # For superusers/staff
+
+        return token
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
