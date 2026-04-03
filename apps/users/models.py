@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 # .\venv\Scripts\activate
 # python manage.py makemigrations
