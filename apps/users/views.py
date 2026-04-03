@@ -79,3 +79,6 @@ class CurrentUserView(APIView):
     def get(self, request):
         user = request.user
         role = "ADMIN" if user.is_superuser else "STAFF"
+
+        full_name = f"{user.first_name} {user.last_name}".strip() or user.username
+        branch_code = "HQ"
