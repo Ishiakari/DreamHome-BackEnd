@@ -52,7 +52,7 @@ MIDDLEWARE = [
 raw_origins = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 
 # Allow your Next.js frontend (localhost:3000) to talk to this backend
-CORS_ALLOW_ALL_ORIGINS = True 
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in raw_origins.split(",")]
 
 ROOT_URLCONF = 'dreamhome_api.urls'
 
