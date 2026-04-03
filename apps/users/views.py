@@ -2,8 +2,6 @@ from rest_framework import generics
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Client, Staff
-
-# Import the clean serializers from our new file
 from .serializers import ClientSerializer, StaffSerializer 
 
 # ==========================================
