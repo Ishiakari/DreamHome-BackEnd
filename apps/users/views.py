@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Client, Staff
 from .serializers import ClientSerializer, StaffSerializer 
+from rest_framework import permissions
 
 # ==========================================
 # VIEWS (The Doorways)
