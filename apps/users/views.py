@@ -71,3 +71,7 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
     lookup_field = "client_no"
+
+
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
