@@ -74,7 +74,7 @@ class NextOfKin(models.Model):
 
 
 # ==========================================
-# 2. UNIFIED CLIENT MODELS (Replaces Renter & PropertyOwner)
+# 2. UNIFIED CLIENT MODELS 
 # ==========================================
 
 class Client(models.Model):
