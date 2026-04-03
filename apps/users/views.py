@@ -78,3 +78,4 @@ class CurrentUserView(APIView):
 
     def get(self, request):
         user = request.user
+        role = "ADMIN" if user.is_superuser else "STAFF"
