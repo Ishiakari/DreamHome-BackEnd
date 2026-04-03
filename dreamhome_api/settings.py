@@ -54,6 +54,8 @@ raw_origins = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
 # Convert "url1,url2" into ["url1", "url2"]
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in raw_origins.split(",")]
 
+CORS_ALLOW_CREDENTIALS = True
+
 ROOT_URLCONF = 'dreamhome_api.urls'
 
 TEMPLATES = [
