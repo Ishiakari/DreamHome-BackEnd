@@ -30,6 +30,12 @@ class IsAdminUser(permissions.BasePermission):
         )
 
 
+class StaffListView(generics.ListAPIView):
+    queryset = Staff.objects.all()
+    serializer_class = StaffSerializer
+    # 🛡️ ONLY the Admin Repo (using a Staff account) can see this!
+    permission_classes = [IsAdminUser]
+
 # --- STAFF VIEWS ---
 
 class StaffListCreateView(generics.ListCreateAPIView):
