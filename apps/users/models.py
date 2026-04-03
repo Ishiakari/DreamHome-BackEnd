@@ -99,7 +99,7 @@ class Client(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
-    address = models.CharField(max_length=255)
+    address = models.CharField(max_length=255, blank=True, null=True)
     telephone_no = models.CharField(max_length=50)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
     birthdate = models.DateField(blank=True, null=True)
