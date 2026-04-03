@@ -78,8 +78,6 @@ class NextOfKin(models.Model):
 # 2. UNIFIED CLIENT MODELS 
 # ==========================================
 
-
-
 class Client(models.Model):
     """
     A single table for anyone doing business with DreamHome.
