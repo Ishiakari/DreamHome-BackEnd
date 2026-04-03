@@ -1,5 +1,29 @@
 from django.utils import timezone
 
+# CREATE OR REPLACE FUNCTION generate_client_no()
+# RETURNS VARCHAR AS $$
+# DECLARE
+#     today_str VARCHAR(8);
+#     last_client_no VARCHAR(12);
+#     new_seq INT;
+# BEGIN
+
+    # today_str := to_char(CURRENT_DATE, 'YYYYMMDD');
+
+    # SELECT client_no INTO last_client_no
+    # FROM users_client 
+    # WHERE client_no LIKE today_str || '%'
+    # ORDER BY client_no DESC
+    # LIMIT 1;
+#    IF last_client_no IS NOT NULL THEN
+#        new_seq := CAST(RIGHT(last_client_no, 4) AS INT) + 1;
+#    ELSE
+#        new_seq := 1;
+#    END IF;
+#    RETURN today_str || LPAD(new_seq::TEXT, 4, '0');
+#END;
+#$$ LANGUAGE plpgsql;
+
 def generate_client_no():
     """
     Generates a unique ID in the format YYYYMMDDXXXX.
