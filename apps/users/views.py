@@ -82,3 +82,16 @@ class CurrentUserView(APIView):
 
         full_name = f"{user.first_name} {user.last_name}".strip() or user.username
         branch_code = "HQ"
+
+        if hasattr(user, 'staff_profile'):
+            staff = user.staff_profile
+            full_name = f"{staff.first_name} {staff.last_name}"
+            branch_code = staff.branch.branch_no if staff.branch else "N/A"
+
+        return Response({
+            "user": {
+                "fullName": full_name,
+                "role": role,
+                "branchCode": branch_code
+            }
+        })
