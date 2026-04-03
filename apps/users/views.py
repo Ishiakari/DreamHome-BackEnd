@@ -18,6 +18,18 @@ def users_api_root(request):
         }
     )
 
+class IsAdminUser(permissions.BasePermission):
+    """
+    Custom permission to only allow Staff/Admin roles.
+    """
+    def has_permission(self, request, view):
+        # Check if the user is logged in AND has the correct role
+        return request.user.is_authenticated and (
+            request.user.is_staff or 
+            getattr(request.user, 'role', None) == 'STAFF'
+        )
+
+
 # --- STAFF VIEWS ---
 
 class StaffListCreateView(generics.ListCreateAPIView):
