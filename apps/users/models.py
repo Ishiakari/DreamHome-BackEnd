@@ -89,7 +89,12 @@ class Client(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='client_profile')
     
     # Acts as the primary key (e.g., CR74 for renters, CO40 for owners)
-    client_no = models.CharField(max_length=10, primary_key=True)
+    client_no = models.CharField(
+        max_length=12, 
+        primary_key=True, 
+        default=generate_client_no, 
+        editable=False
+    )
     
     # Core Shared Details
     first_name = models.CharField(max_length=100)
