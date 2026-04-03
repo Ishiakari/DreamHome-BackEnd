@@ -49,6 +49,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+raw_origins = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+
 # Allow your Next.js frontend (localhost:3000) to talk to this backend
 CORS_ALLOW_ALL_ORIGINS = True 
 
