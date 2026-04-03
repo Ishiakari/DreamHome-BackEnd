@@ -1,32 +1,10 @@
-from rest_framework import generics, serializers
+from rest_framework import generics
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Client, RenterRequirement, Staff, NextOfKin
-from .serializers import ClientSerializer
+from .models import Client, Staff
 
-
-# ==========================================
-# SERIALIZERS (The Translators)
-# ==========================================
-
-class StaffSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Staff
-        fields = "__all__"
-
-class RenterRequirementSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RenterRequirement
-        fields = "__all__"
-
-class ClientSerializer(serializers.ModelSerializer):
-    # This automatically includes the renter's requirements inside the JSON response if they exist!
-    renter_requirements = RenterRequirementSerializer(read_only=True)
-
-    class Meta:
-        model = Client
-        fields = "__all__"
-
+# Import the clean serializers from our new file
+from .serializers import ClientSerializer, StaffSerializer 
 
 # ==========================================
 # VIEWS (The Doorways)
@@ -37,7 +15,7 @@ def users_api_root(request):
     return Response(
         {
             "staff": "/api/users/staff/",
-            "clients": "/api/users/clients/", # Replaced renters/owners with the unified endpoint
+            "clients": "/api/users/clients/", # Replaced renters/owners with unified endpoint
         }
     )
 
