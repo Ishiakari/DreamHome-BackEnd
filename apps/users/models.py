@@ -95,7 +95,7 @@ class Client(models.Model):
         #default=generate_client_no, 
         editable=False
     )
-    
+    # python manage.py makemigrations --empty users
     # Core Shared Details
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
