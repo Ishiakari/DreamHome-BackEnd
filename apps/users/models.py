@@ -92,7 +92,7 @@ class Client(models.Model):
     client_no = models.CharField(
         max_length=12, 
         primary_key=True, 
-        default=generate_client_no, 
+        #default=generate_client_no, 
         editable=False
     )
     
