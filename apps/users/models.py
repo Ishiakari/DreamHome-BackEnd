@@ -12,16 +12,25 @@ GENDER_CHOICES = [
     ('P', 'Prefer not to say')
 ]
 
-ROLE_CHOICES = [
-    ('RENTER'  , 'Renter'),
-    ('PROPERTY_OWNER', 'Property Owner'),
+CLIENT_ROLE_CHOICES = [
+    ('RENTER', 'Renter'),
+    ('OWNER', 'Property Owner'),
     ('BOTH', 'Both')
 ]
 
-# Create your models here.
+# ==========================================
+# 1. STAFF MODELS
+# ==========================================
 
 class Staff(models.Model):
+    # 🌟 SECURE LOGIN LINK: Handles the encrypted password and core authentication
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='staff_profile')
+    
     staff_no = models.CharField(max_length=10, primary_key=True)
+    
+    # 🌟 NEW FIELD: Email added for login and internal communication
+    email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
+    
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
@@ -41,8 +50,6 @@ class Staff(models.Model):
     
     # Relationships
     branch = models.ForeignKey('branches.Branch', on_delete=models.SET_NULL, null=True, related_name='staff')
-    
-    # Self-referencing Foreign Key for Supervisor
     supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subordinates')
     
     class Meta:
@@ -63,48 +70,48 @@ class NextOfKin(models.Model):
         
     def __str__(self):
         return f"{self.full_name} ({self.relationship} to {self.staff.staff_no})"
+
+
+# ==========================================
+# 2. UNIFIED CLIENT MODELS (Replaces Renter & PropertyOwner)
+# ==========================================
+
+class Client(models.Model):
+    """
+    A single table for anyone doing business with DreamHome.
+    Eliminates duplicated columns and makes role switching easy.
+    """
+    # 🌟 SECURE LOGIN LINK: Handles the email and encrypted password
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='client_profile')
     
+    # Acts as the primary key (e.g., CR74 for renters, CO40 for owners)
+    client_no = models.CharField(max_length=10, primary_key=True)
     
-class Renter(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='renter_profile')
-    
-    renter_no = models.CharField(max_length=10, primary_key=True)
+    # Core Shared Details
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    
-    # 🌟 NEW FIELDS
     email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
-    birthdate = models.DateField(blank=True, null=True)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='RENTER')
-
-
     address = models.CharField(max_length=255)
     telephone_no = models.CharField(max_length=50)
-    pref_property_type = models.CharField(max_length=50, blank=True, null=True)
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
+    birthdate = models.DateField(blank=True, null=True)
+    
+    # Determines what they can do on the frontend
+    role = models.CharField(max_length=20, choices=CLIENT_ROLE_CHOICES, default='RENTER')
+
+    def __str__(self):
+        return f"{self.client_no} - {self.first_name} {self.last_name} ({self.role})"
+
+
+class RenterRequirement(models.Model):
+    """
+    Holds the specific property requirements if the Client is a RENTER or BOTH.
+    Matches the 'Property Requirement Details' from the case study form.
+    """
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, primary_key=True, related_name='renter_requirements')
+    
+    pref_property_type = models.CharField(max_length=50, blank=True, null=True, verbose_name="Preferred Property Type")
     max_monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
-    
-    
-class PropertyOwner(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='owner_profile')
-    
-    owner_no = models.CharField(max_length=10, primary_key=True)
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-
-    # 🌟 NEW FIELDS
-    email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
-    birthdate = models.DateField(blank=True, null=True)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='OWNER')
-
-    
-    # Existing Fields
-    address = models.CharField(max_length=255)
-    telephone_no = models.CharField(max_length=50)
-    
-    def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"Requirements for {self.client.first_name} {self.client.last_name}"

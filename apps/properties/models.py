@@ -13,7 +13,7 @@ class PropertyForRent(models.Model):
     status = models.CharField(max_length=50)
     
     # Relationships
-    owner = models.ForeignKey('users.PropertyOwner', on_delete=models.CASCADE, related_name='properties')
+    owner = models.ForeignKey('users.Client', on_delete=models.CASCADE, related_name='owned_properties')
     staff = models.ForeignKey('users.Staff', on_delete=models.SET_NULL, null=True, related_name='managed_properties')
     branch = models.ForeignKey('branches.Branch', on_delete=models.CASCADE, related_name='properties')
     
@@ -28,7 +28,7 @@ class PropertyForRent(models.Model):
     
 class PropertyViewing(models.Model):
     property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='viewings')
-    renter = models.ForeignKey('users.Renter', on_delete=models.CASCADE, related_name='viewings')
+    renter = models.ForeignKey('users.Client', on_delete=models.CASCADE, related_name='viewings')
     view_date = models.DateField()
     comments = models.TextField(blank=True, null=True)
     

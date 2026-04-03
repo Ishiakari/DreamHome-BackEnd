@@ -12,7 +12,7 @@ class LeaseAgreement(models.Model):
     duration = models.IntegerField(help_text="Duration in months")
     
     # Relationships
-    renter = models.ForeignKey('users.Renter', on_delete=models.CASCADE, related_name='leases')
+    renter = models.ForeignKey('users.Client', on_delete=models.CASCADE, related_name='leases')
     property = models.ForeignKey('properties.PropertyForRent', on_delete=models.CASCADE, related_name='leases')
     staff = models.ForeignKey('users.Staff', on_delete=models.SET_NULL, null=True, related_name='arranged_leases')
     
