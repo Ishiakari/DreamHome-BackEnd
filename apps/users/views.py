@@ -2,7 +2,6 @@ from rest_framework import generics, serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-# Using our newly refactored models
 from .models import Client, RenterRequirement, Staff, NextOfKin
 
 
