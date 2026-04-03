@@ -12,6 +12,6 @@ urlpatterns = [
     path('api/properties/', include('apps.properties.urls')),
     path('api/leases/', include('apps.leases.urls')),
     
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
