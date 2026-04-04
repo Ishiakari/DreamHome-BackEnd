@@ -4,5 +4,5 @@ from . import views
 
 urlpatterns = [
     path("", views.BranchListCreateView.as_view(), name="branch-list-create"),
-    path("<str:name>/", views.BranchDetailView.as_view(), name="branch-detail"),
+    path("<str:branch_no>/", views.BranchDetailView.as_view(), name="branch-detail"),
 ]
