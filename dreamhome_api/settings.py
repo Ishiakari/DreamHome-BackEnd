@@ -3,10 +3,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 
-# 1. Load the secret variables from the .env file
+
 load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 2. Keep the secret key hidden!
@@ -49,7 +49,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-raw_origins = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
+raw_origins = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001")
 
 # Convert "url1,url2" into ["url1", "url2"]
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in raw_origins.split(",")]

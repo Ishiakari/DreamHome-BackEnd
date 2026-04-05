@@ -5,6 +5,9 @@ urlpatterns = [
     # API Root
     path("", views.users_api_root, name="users-api-root"),
     
+    # Current User (Profile)
+    path("me/", views.CurrentUserView.as_view(), name="current-user"),
+    
     # Staff URLs
     path("staff/", views.StaffListCreateView.as_view(), name="staff-list-create"),
     path("staff/<str:staff_no>/", views.StaffDetailView.as_view(), name="staff-detail"),
