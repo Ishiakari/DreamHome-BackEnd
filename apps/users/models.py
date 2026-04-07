@@ -116,7 +116,7 @@ class RenterRequirement(models.Model):
     """
     client = models.OneToOneField(Client, on_delete=models.CASCADE, primary_key=True, related_name='renter_requirements')
     
-    pref_property_type = models.CharField(max_length=50, blank=True, null=True, verbose_name="Preferred Property Type")
+    pref_property_type = models.CharField(max_length=50, blank=True, null=True, verbose_name="Preferred Property Type") # House, Flat, ilisding nga table constrain to eith house or flat
     max_monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     
     def __str__(self):
