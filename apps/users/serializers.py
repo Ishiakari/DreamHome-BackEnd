@@ -9,9 +9,70 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 # ==========================================
 
 class StaffSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = Staff
         fields = "__all__"
+        read_only_fields = ['staff_no', 'user']
+
+    def create(self, validated_data):
+        password = validated_data.pop('password', 'dreamhome2026')
+        email = validated_data.get('email')
+
+        # Auto-generate staff_no
+        last_staff = Staff.objects.order_by('-staff_no').first()
+        if last_staff and last_staff.staff_no.startswith('S'):
+            try:
+                new_seq = int(last_staff.staff_no[1:]) + 1
+            except ValueError:
+                new_seq = 1
+        else:
+            new_seq = 1
+        staff_no = f"S{new_seq:03d}"
+        validated_data['staff_no'] = staff_no
+
+        user = None
+        if email:
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password=password,
+                first_name=validated_data.get('first_name', ''),
+                last_name=validated_data.get('last_name', '')
+            )
+            # Give staff access to django admin if needed, and standard staff permission
+            user.is_staff = True
+            user.save()
+
+        staff = Staff.objects.create(user=user, **validated_data)
+        return staff
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        
+        instance = super().update(instance, validated_data)
+
+        if instance.user:
+            user_needs_save = False
+            if 'email' in validated_data and instance.user.email != validated_data['email']:
+                instance.user.email = validated_data['email']
+                instance.user.username = validated_data['email']
+                user_needs_save = True
+            if 'first_name' in validated_data and instance.user.first_name != validated_data['first_name']:
+                instance.user.first_name = validated_data['first_name']
+                user_needs_save = True
+            if 'last_name' in validated_data and instance.user.last_name != validated_data['last_name']:
+                instance.user.last_name = validated_data['last_name']
+                user_needs_save = True
+            if password:
+                instance.user.set_password(password)
+                user_needs_save = True
+                
+            if user_needs_save:
+                instance.user.save()
+
+        return instance
 
 class RenterRequirementSerializer(serializers.ModelSerializer):
     class Meta:
