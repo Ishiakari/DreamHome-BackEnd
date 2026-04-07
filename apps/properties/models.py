@@ -39,7 +39,7 @@ class PropertyViewing(models.Model):
         return f"{self.renter} viewed {self.property} on {self.view_date}"
     
 
-    
+
 class PropertyInspection(models.Model):
     property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='inspections')
     staff = models.ForeignKey('users.Staff', on_delete=models.CASCADE, related_name='inspections')
