@@ -23,7 +23,6 @@ class PropertyForRent(models.Model):
     def __str__(self):
         return f"{self.property_no} - {self.street}, {self.city}"
     
-    
 class PropertyViewing(models.Model):
     property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='viewings')
     renter = models.ForeignKey('users.Client', on_delete=models.CASCADE, related_name='viewings')
