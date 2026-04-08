@@ -11,7 +11,7 @@ class Branch(models.Model):
         # Add more here...
     ]
 
-    branch_no = models.CharField(max_length=3, primary_key=True, editable=False, blank=True)
+    branch_no = models.CharField(max_length=10, primary_key=True, editable=False, blank=True)
     street = models.CharField(max_length=255)
     
     # 🌟 Apply the choices here
