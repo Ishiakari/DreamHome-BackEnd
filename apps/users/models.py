@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from .utils import generate_client_no
+from django.core.exceptions import ValidationError
 
 # .\venv\Scripts\activate
 # python manage.py makemigrations
@@ -42,7 +43,10 @@ class Staff(models.Model):
     sex = models.CharField(max_length=10)
     dob = models.DateField(verbose_name="Date of Birth")
     nin = models.CharField(max_length=50, verbose_name="National Insurance Number")
-    position = models.CharField(max_length=50)
+    
+    # Consider making this a choices field in the future for stricter consistency
+    position = models.CharField(max_length=50) 
+    
     salary = models.DecimalField(max_digits=10, decimal_places=2)
     date_joined = models.DateField()
     
@@ -54,7 +58,17 @@ class Staff(models.Model):
     
     # Relationships
     branch = models.ForeignKey('branches.Branch', on_delete=models.SET_NULL, null=True, related_name='staff')
-    supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subordinates')
+    
+    # 🌟 THE SUPERVISOR COLUMN
+    supervisor = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='subordinates',
+        limit_choices_to={'position__icontains': 'Supervisor'}, # Ensures only supervisors can be selected
+        help_text="The supervisor overseeing this staff member."
+    )
     
     class Meta:
         verbose_name_plural = "Staff"
@@ -62,18 +76,19 @@ class Staff(models.Model):
     def __str__(self):
         return f"{self.staff_no} - {self.first_name} {self.last_name}"
 
-class NextOfKin(models.Model):
-    staff = models.OneToOneField(Staff, on_delete=models.CASCADE, primary_key=True, related_name='next_of_kin')
-    full_name = models.CharField(max_length=150)
-    relationship = models.CharField(max_length=50)
-    address = models.CharField(max_length=255)
-    telephone_no = models.CharField(max_length=50)
-    
-    class Meta:
-        verbose_name_plural = "Next of Kin"
+    def clean(self):
+        super().clean()
         
-    def __str__(self):
-        return f"{self.full_name} ({self.relationship} to {self.staff.staff_no})"
+        # 🌟 ENFORCE MAX STAFF RULE: A supervisor can manage a max of 10 staff members 
+        if self.supervisor:
+            current_subordinates_count = self.supervisor.subordinates.count()
+            
+            # Check if this is a new assignment or a change of supervisor
+            if not self.pk or Staff.objects.get(pk=self.pk).supervisor != self.supervisor:
+                if current_subordinates_count >= 10:
+                    raise ValidationError({
+                        "supervisor": f"Supervisor {self.supervisor.first_name} already manages the maximum of 10 staff members."
+                    })
 
 
 # ==========================================
@@ -123,3 +138,22 @@ class RenterRequirement(models.Model):
     
     def __str__(self):
         return f"Requirements for {self.client.first_name} {self.client.last_name}"
+
+class NextOfKin(models.Model):
+    # A OneToOneField ensures one staff member can only have one next of kin
+    staff = models.OneToOneField(
+        'Staff', 
+        on_delete=models.CASCADE, 
+        primary_key=True, 
+        related_name='next_of_kin'
+    )
+    full_name = models.CharField(max_length=255)
+    relationship = models.CharField(max_length=100)
+    address = models.CharField(max_length=255)
+    telephone_no = models.CharField(max_length=50)
+
+    class Meta:
+        verbose_name_plural = "Next of Kin"
+
+    def __str__(self):
+        return f"{self.full_name} ({self.relationship} to {self.staff.staff_no})"
