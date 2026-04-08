@@ -29,7 +29,7 @@ class Branch(models.Model):
     fax_no = models.CharField(max_length=50, blank=True, null=True)
 
     manager = models.OneToOneField(
-        'Staff', 
+        'users.Staff', 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True, 
