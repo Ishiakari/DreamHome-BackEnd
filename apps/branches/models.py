@@ -28,6 +28,15 @@ class Branch(models.Model):
     telephone_no = models.CharField(max_length=50)
     fax_no = models.CharField(max_length=50, blank=True, null=True)
 
+    manager = models.OneToOneField(
+        'Staff', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='managed_branch',
+        help_text="The specific staff member managing this branch."
+    )
+
     class Meta:
         verbose_name_plural = "Branches"
 
