@@ -14,7 +14,7 @@ GENDER_CHOICES = [
     ('P', 'Prefer not to say')
 ]
 
-Hi 
+
 
 CLIENT_ROLE_CHOICES = [
     ('RENTER', 'Renter'),
