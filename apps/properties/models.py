@@ -1,31 +1,75 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
-# Create your models here.
 class PropertyForRent(models.Model):
-    property_no = models.CharField(max_length=10, primary_key=True)
+    
+    # 🌟 NEW: Standardized choices for data consistency
+    class PropertyType(models.TextChoices):
+        FLAT = 'Flat', 'Flat'
+        HOUSE = 'House', 'House'
+        
+    class PropertyStatus(models.TextChoices):
+        AVAILABLE = 'Available', 'Available'
+        RENTED = 'Rented', 'Rented'
+        WITHDRAWN = 'Withdrawn', 'Withdrawn'
+
+    property_no = models.CharField(max_length=10, primary_key=True, editable=False, blank=True)
     street = models.CharField(max_length=255)
     area = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=100)
     postcode = models.CharField(max_length=20)
-    property_type = models.CharField(max_length=50) # 'type' is a reserved Python keyword, so we use 'property_type'
+    
+    # 🌟 UPDATED: Apply choices
+    property_type = models.CharField(max_length=50, choices=PropertyType.choices) 
     no_of_rooms = models.IntegerField()
     monthly_rent = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=50)
+    status = models.CharField(max_length=50, choices=PropertyStatus.choices, default=PropertyStatus.AVAILABLE)
     
     # Relationships
-    owner = models.ForeignKey('users.Client', on_delete=models.CASCADE, related_name='owned_properties')
+    # 🌟 UPDATED: Ensure only clients with the 'Owner' role can be assigned here
+    owner = models.ForeignKey(
+        'users.Client', 
+        on_delete=models.CASCADE, 
+        related_name='owned_properties',
+        limit_choices_to={'role': 'Owner'}
+    )
+    
     staff = models.ForeignKey('users.Staff', on_delete=models.SET_NULL, null=True, related_name='managed_properties')
     branch = models.ForeignKey('branches.Branch', on_delete=models.CASCADE, related_name='properties')
+    date_withdrawn = models.DateField(blank=True, null=True, help_text="Date the property was removed from the market.")
     
     class Meta:
         verbose_name_plural = "Properties for Rent"
         
     def __str__(self):
         return f"{self.property_no} - {self.street}, {self.city}"
+
+    def clean(self):
+        super().clean()
+        
+        # 🌟 BUSINESS RULE: A staff member can manage a max of 20 properties
+        if self.staff:
+            # Count current active properties managed by this staff member
+            # We exclude 'Withdrawn' properties because the staff isn't actively managing them
+            current_managed_count = PropertyForRent.objects.filter(
+                staff=self.staff
+            ).exclude(status=self.PropertyStatus.WITHDRAWN).count()
+            
+            # Check if this is a new property being added, or an existing property changing staff
+            if not self.pk or PropertyForRent.objects.get(pk=self.pk).staff != self.staff:
+                if current_managed_count >= 20:
+                    raise ValidationError({
+                        "staff": f"{self.staff.first_name} {self.staff.last_name} already manages the maximum of 20 active properties."
+                    })
     
 class PropertyViewing(models.Model):
     property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='viewings')
-    renter = models.ForeignKey('users.Client', on_delete=models.CASCADE, related_name='viewings')
+    renter = models.ForeignKey(
+        'users.Client', 
+        on_delete=models.CASCADE, 
+        related_name='viewings',
+        limit_choices_to={'role': 'Renter'}
+    )
     view_date = models.DateField()
     comments = models.TextField(blank=True, null=True)
     
