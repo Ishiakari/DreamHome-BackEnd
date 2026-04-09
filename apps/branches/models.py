@@ -45,15 +45,14 @@ class Branch(models.Model):
         is_new = not self.branch_no
         
         # Tell Django to save to the database. 
-        # (This fires your PostgreSQL trigger in the background to assign B1, B2, etc!)
         super().save(*args, **kwargs)
         
         #  If it was new, instantly fetch the ID the database just made
         if is_new:
-            # We use telephone_no and street to find the EXACT branch we just saved
+            #  use telephone_no and street to find the EXACT branch we just saved
             db_record = Branch.objects.filter(telephone_no=self.telephone_no, street=self.street).first()
             if db_record:
-                # Update Python's memory with the new ID so the Admin panel doesn't crash
+                # Update Python's memory with the new ID 
                 self.branch_no = db_record.branch_no
 
     def __str__(self):
