@@ -11,7 +11,7 @@ class Branch(models.Model):
         # Add more here...
     ]
 
-    branch_no = models.CharField(max_length=3, primary_key=True, editable=False, blank=True)
+    branch_no = models.CharField(max_length=10, primary_key=True, editable=False, blank=True)
     street = models.CharField(max_length=255)
     
     # 🌟 Apply the choices here
@@ -28,8 +28,32 @@ class Branch(models.Model):
     telephone_no = models.CharField(max_length=50)
     fax_no = models.CharField(max_length=50, blank=True, null=True)
 
+    manager = models.OneToOneField(
+        'users.Staff', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='managed_branch',
+        help_text="The specific staff member managing this branch."
+    )
+
     class Meta:
         verbose_name_plural = "Branches"
+
+    def save(self, *args, **kwargs):
+        # Check if this is a brand new branch being created
+        is_new = not self.branch_no
+        
+        # Tell Django to save to the database. 
+        super().save(*args, **kwargs)
+        
+        #  If it was new, instantly fetch the ID the database just made
+        if is_new:
+            #  use telephone_no and street to find the EXACT branch we just saved
+            db_record = Branch.objects.filter(telephone_no=self.telephone_no, street=self.street).first()
+            if db_record:
+                # Update Python's memory with the new ID 
+                self.branch_no = db_record.branch_no
 
     def __str__(self):
         return f"{self.branch_no} - {self.city}"

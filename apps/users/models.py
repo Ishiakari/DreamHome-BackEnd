@@ -1,123 +1,147 @@
+
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
-from .utils import generate_client_no
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
-# .\venv\Scripts\activate
-# python manage.py makemigrations
-# python manage.py migrate
-
-GENDER_CHOICES = [
+# Options
+SEX_CHOICES = [
     ('M', 'Male'),
     ('F', 'Female'),
-    ('O', 'Other'),
     ('P', 'Prefer not to say')
 ]
 
-CLIENT_ROLE_CHOICES = [
-    ('RENTER', 'Renter'),
-    ('OWNER', 'Property Owner'),
-    ('BOTH', 'Both')
-]
-
-# ==========================================
-# 1. STAFF MODELS
-# ==========================================
-
 class Staff(models.Model):
-    # 🌟 SECURE LOGIN LINK: Handles the encrypted password and core authentication
+    class Position(models.TextChoices):
+        STAFF = 'Staff', 'Standard Staff'
+        MANAGER = 'Manager', 'Manager'
+        SUPERVISOR = 'Supervisor', 'Supervisor'
+        SECRETARY = 'Secretary', 'Secretarial Staff'
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='staff_profile')
-    
-    staff_no = models.CharField(max_length=10, primary_key=True)
-    
-    # 🌟 NEW FIELD: Email added for login and internal communication
+    staff_no = models.CharField(max_length=10, primary_key=True, editable=False, blank=True)
     email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
     
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
     telephone_no = models.CharField(max_length=50)
-    sex = models.CharField(max_length=10)
+    sex = models.CharField(max_length=10, choices=SEX_CHOICES)
     dob = models.DateField(verbose_name="Date of Birth")
     nin = models.CharField(max_length=50, verbose_name="National Insurance Number")
-    position = models.CharField(max_length=50)
+    
+    position = models.CharField(
+        max_length=50,
+        choices=Position.choices,
+        default=Position.STAFF, 
+        help_text="Select the official job title."
+    ) 
+    
     salary = models.DecimalField(max_digits=10, decimal_places=2)
     date_joined = models.DateField()
     
-    # Optional fields based on role
-    typing_speed = models.IntegerField(blank=True, null=True, help_text="Secretarial staff only")
+    typing_speed = models.IntegerField(
+        blank=True, 
+        null=True, 
+        validators=[
+            MinValueValidator(10, message="Typing speed must be at least 10 WPM."),
+            MaxValueValidator(250, message="Typing speed cannot exceed 250 WPM.")
+        ],
+        help_text="Secretarial staff only (Words Per Minute)."
+    )
+
     manager_start_date = models.DateField(blank=True, null=True, help_text="Managers only")
     bonus_payment = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     car_allowance = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     
-    # Relationships
     branch = models.ForeignKey('branches.Branch', on_delete=models.SET_NULL, null=True, related_name='staff')
-    supervisor = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='subordinates')
     
+    supervisor = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='subordinates',
+        limit_choices_to={'position': Position.SUPERVISOR}, 
+        help_text="The supervisor overseeing this staff member."
+    )
+
+    # 🌟 MERGED CLEAN METHOD
+    def clean(self):
+        super().clean()
+        
+        # Role-specific Validation
+        if self.position == self.Position.SECRETARY:
+            if self.typing_speed is None:
+                raise ValidationError({"typing_speed": "Secretarial staff must have a recorded typing speed."})
+        elif self.position == self.Position.MANAGER:
+            if not self.manager_start_date:
+                raise ValidationError({"manager_start_date": "Managers must have a start date."})
+        else:
+            # Clear fields if position changes from Manager/Secretary to something else
+            self.typing_speed = None
+            self.manager_start_date = None
+
+        # Supervisor Max Capacity Rule (10 subordinates)
+        if self.supervisor:
+            current_subordinates_count = self.supervisor.subordinates.count()
+            if not self.pk or Staff.objects.get(pk=self.pk).supervisor != self.supervisor:
+                if current_subordinates_count >= 10:
+                    raise ValidationError({
+                        "supervisor": f"Supervisor {self.supervisor.first_name} already manages 10 staff."
+                    })
+
     class Meta:
         verbose_name_plural = "Staff"
         
     def __str__(self):
-        return f"{self.staff_no} - {self.first_name} {self.last_name}"
+        return f"{self.staff_no} - {self.first_name} {self.last_name} ({self.get_position_display()})"
+
+class Client(models.Model):
+    class Role(models.TextChoices):
+        RENTER = 'Renter', 'Renter'
+        OWNER = 'Owner', 'Property Owner'
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='client_profile')
+    client_no = models.CharField(max_length=12, primary_key=True, editable=False, blank=True)
+    role = models.CharField(max_length=20, choices=Role.choices, default=Role.RENTER)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    address = models.CharField(max_length=255, default='Unknown Address')
+    telephone_no = models.CharField(max_length=50)
+    email = models.EmailField(max_length=255, unique=True, default='placeholder@example.com')
+
+    def __str__(self):
+        return f"{self.client_no} - {self.first_name} {self.last_name} ({self.get_role_display()})"
+
+class RenterRequirement(models.Model):
+    class PropertyType(models.TextChoices):
+        HOUSE = 'House', 'House'
+        FLAT = 'Flat', 'Flat'
+
+    client = models.OneToOneField(Client, on_delete=models.CASCADE, primary_key=True, related_name='renter_requirements')
+    pref_property_type = models.CharField(max_length=50, choices=PropertyType.choices, blank=True, null=True)
+    max_monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    general_comments = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Requirements for {self.client.first_name}"
 
 class NextOfKin(models.Model):
     staff = models.OneToOneField(Staff, on_delete=models.CASCADE, primary_key=True, related_name='next_of_kin')
-    full_name = models.CharField(max_length=150)
-    relationship = models.CharField(max_length=50)
+    full_name = models.CharField(max_length=255)
+    relationship = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
     telephone_no = models.CharField(max_length=50)
-    
+
     class Meta:
         verbose_name_plural = "Next of Kin"
-        
-    def __str__(self):
-        return f"{self.full_name} ({self.relationship} to {self.staff.staff_no})"
 
-
-# ==========================================
-# 2. UNIFIED CLIENT MODELS 
-# ==========================================
-
-class Client(models.Model):
-    """
-    A single table for anyone doing business with DreamHome.
-    Eliminates duplicated columns and makes role switching easy.
-    """
-    # 🌟 SECURE LOGIN LINK: Handles the email and encrypted password
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='client_profile')
-    
-    client_no = models.CharField(
-        max_length=12, 
-        primary_key=True, 
-    #  default=generate_client_no, 
-        editable=False
-    )
-    # python manage.py makemigrations --empty users
-    # Core Shared Details
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
-    address = models.CharField(max_length=255, blank=True, null=True)
-    telephone_no = models.CharField(max_length=50)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
-    birthdate = models.DateField(blank=True, null=True)
-    
-    # Determines what they can do on the frontend
-    role = models.CharField(max_length=20, choices=CLIENT_ROLE_CHOICES, default='RENTER')
-
-    def __str__(self):
-        return f"{self.client_no} - {self.first_name} {self.last_name} ({self.role})"
-
-
-class RenterRequirement(models.Model):
-    """
-    Holds the specific property requirements if the Client is a RENTER or BOTH.
-    Matches the 'Property Requirement Details' from the case study form.
-    """
-    client = models.OneToOneField(Client, on_delete=models.CASCADE, primary_key=True, related_name='renter_requirements')
-    
-    pref_property_type = models.CharField(max_length=50, blank=True, null=True, verbose_name="Preferred Property Type")
-    max_monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    
-    def __str__(self):
-        return f"Requirements for {self.client.first_name} {self.client.last_name}"
+# 🌟 AUTOMATED CLEANUP SIGNAL
+@receiver(post_delete, sender=Staff)
+@receiver(post_delete, sender=Client)
+def delete_related_user(sender, instance, **kwargs):
+    if instance.user:
+        instance.user.delete()
