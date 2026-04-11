@@ -12,8 +12,12 @@ class PropertyForRent(models.Model):
         AVAILABLE = 'Available', 'Available'
         RENTED = 'Rented', 'Rented'
         WITHDRAWN = 'Withdrawn', 'Withdrawn'
+        
+    
 
     property_no = models.CharField(max_length=10, primary_key=True, editable=False, blank=True)
+    title = models.CharField(max_length=200, help_text="e.g. Stunning 2-Bed Flat in City Centre", default="A Property for Rent")
+    description = models.TextField(help_text="Full description of the property features and area.", default="A Property")
     street = models.CharField(max_length=255)
     area = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=100)
