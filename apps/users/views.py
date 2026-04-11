@@ -1,11 +1,12 @@
 from rest_framework import generics
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Client, Staff
-from .serializers import ClientSerializer, StaffSerializer 
 from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+
+from .models import Client, Staff
+from .serializers import ClientSerializer, StaffSerializer, MyTokenObtainPairSerializer
 
 # ==========================================
 # VIEWS (The Doorways)
@@ -78,20 +79,62 @@ class CurrentUserView(APIView):
 
     def get(self, request):
         user = request.user
-        role = "ADMIN" if user.is_superuser else "STAFF"
+        
+        # Basic data that everyone has
+        data = {
+            "fullName": f"{user.first_name} {user.last_name}".strip() or user.username,
+            "firstName": user.first_name,
+            "lastName": user.last_name,
+            "email": user.email,
+            "role": "ADMIN" if user.is_superuser else "STAFF",
+        }
 
-        full_name = f"{user.first_name} {user.last_name}".strip() or user.username
-        branch_code = "HQ"
+        # 🌟 Improved logic: Adds ALL fields from the Client model
+        if hasattr(user, 'client_profile'):
+            client = user.client_profile
+            data.update({
+                "client_no": client.client_no,
+                "role": client.role,
+                "telephoneNo": client.telephone_no,
+                "address": client.address
+            })
 
-        if hasattr(user, 'staff_profile'):
+        elif hasattr(user, 'staff_profile'):
             staff = user.staff_profile
-            full_name = f"{staff.first_name} {staff.last_name}"
-            branch_code = staff.branch.branch_no if staff.branch else "N/A"
+            data.update({
+                "staff_no": staff.staff_no,
+                "role": "STAFF",
+                "telephoneNo": staff.telephone_no,
+                "address": staff.address,
+                "branchCode": staff.branch.branch_no if staff.branch else "HQ"
+            })
 
-        return Response({
-            "user": {
-                "fullName": full_name,
-                "role": role,
-                "branchCode": branch_code
-            }
-        })
+        return Response({"user": data})
+
+    # 🌟 NEW: Handles the actual "Save" click from Next.js
+    def put(self, request):
+        user = request.user
+        
+        if hasattr(user, 'client_profile'):
+            serializer = ClientSerializer(user.client_profile, data=request.data, partial=True)
+        elif hasattr(user, 'staff_profile'):
+            serializer = StaffSerializer(user.staff_profile, data=request.data, partial=True)
+        else:
+            return Response({"error": "No profile found."}, status=404)
+
+        if serializer.is_valid():
+            serializer.save()
+            
+            # 🌟 THE FINAL BOSS FIX: Generate fresh tokens with the NEW data baked in!
+            refresh = MyTokenObtainPairSerializer.get_token(user)
+            
+            return Response({
+                "message": "Profile updated!", 
+                "user": serializer.data,
+                "tokens": {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                }
+            })
+        
+        return Response(serializer.errors, status=400)

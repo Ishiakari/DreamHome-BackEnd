@@ -92,7 +92,8 @@ class RenterRequirementSerializer(serializers.ModelSerializer):
 
 
 class ClientSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
+    # Keep their password and renter_requirements settings
+    password = serializers.CharField(write_only=True, required=False)
     renter_requirements = RenterRequirementSerializer(read_only=True)
 
     class Meta:
@@ -100,28 +101,55 @@ class ClientSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ['client_no', 'user']
 
-    # 🌟 Apply the exact same security to Clients!
+    # Keep their existing secure email validation
     def validate_email(self, value):
         if self.instance and self.instance.email == value:
             return value
-        
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("An account with this email address already exists.")
         return value
 
+    # Keep their existing create method
     def create(self, validated_data):
         password = validated_data.pop('password')
         email = validated_data.get('email')
-
         user = User.objects.create_user(
             username=email,
             email=email,
-            password=password
+            password=password,
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', '')
         )
-
         client = Client.objects.create(user=user, **validated_data)
         return client
 
+    # 🌟 ADD THIS: This is the new part that matches the Staff logic
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        
+        # Update Client fields (telephone_no, address, etc.)
+        instance = super().update(instance, validated_data)
+
+        # Sync with the User login table
+        if instance.user:
+            user_needs_save = False
+            if 'email' in validated_data and instance.user.email != validated_data['email']:
+                instance.user.email = validated_data['email']
+                instance.user.username = validated_data['email']
+                user_needs_save = True
+            if 'first_name' in validated_data and instance.user.first_name != validated_data['first_name']:
+                instance.user.first_name = validated_data['first_name']
+                user_needs_save = True
+            if 'last_name' in validated_data and instance.user.last_name != validated_data['last_name']:
+                instance.user.last_name = validated_data['last_name']
+                user_needs_save = True
+            if password:
+                instance.user.set_password(password)
+                user_needs_save = True
+                
+            if user_needs_save:
+                instance.user.save()
+        return instance
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
