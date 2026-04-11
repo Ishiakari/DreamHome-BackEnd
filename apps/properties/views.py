@@ -1,5 +1,7 @@
 from rest_framework import generics, serializers, permissions
 from .models import Advertisement, PropertyForRent, PropertyInspection, PropertyViewing
+# 🌟 IMPORTANT: Change 'apps.users.models' if your Client model is elsewhere!
+from apps.users.models import Client 
 
 # --- SERIALIZERS ---
 
@@ -7,7 +9,7 @@ class PropertyForRentSerializer(serializers.ModelSerializer):
     class Meta:
         model = PropertyForRent
         fields = "__all__"
-        # 🌟 Make owner read-only so the API doesn't require it in the form
+        # 🌟 'owner' is read-only because we set it automatically in the View
         read_only_fields = ['owner']
 
 class PropertyViewingSerializer(serializers.ModelSerializer):
@@ -31,13 +33,19 @@ class AdvertisementSerializer(serializers.ModelSerializer):
 class PropertyForRentListCreateView(generics.ListCreateAPIView):
     queryset = PropertyForRent.objects.select_related("owner", "staff", "branch").all()
     serializer_class = PropertyForRentSerializer
-    # 🌟 Ensure the user is logged in
     permission_classes = [permissions.IsAuthenticated]
 
-    # 🌟 THIS IS THE FIX:
     def perform_create(self, serializer):
-        # Automatically set the owner to the current logged-in user
-        serializer.save(owner=self.request.user)
+        # 🌟 THE FIX:
+        # We find the 'Client' profile that belongs to the logged-in user.
+        try:
+            client_profile = Client.objects.get(user=self.request.user)
+            serializer.save(owner=client_profile)
+        except Client.DoesNotExist:
+            # This handles the case where you are logged in but don't have a Client profile
+            raise serializers.ValidationError({
+                "detail": "Your user account is not linked to a Client profile. Please check the Admin panel."
+            })
 
 
 class PropertyForRentDetailView(generics.RetrieveUpdateDestroyAPIView):
