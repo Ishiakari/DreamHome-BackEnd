@@ -1,8 +1,8 @@
 from django.urls import path
-
 from . import views
 
 urlpatterns = [
+    path("my/", views.MyPropertyForRentListView.as_view(), name="my-properties"),
     path("", views.PropertyForRentListCreateView.as_view(), name="property-list-create"),
     path("<str:property_no>/", views.PropertyForRentDetailView.as_view(), name="property-detail"),
     path("viewings/", views.PropertyViewingListCreateView.as_view(), name="viewing-list-create"),
