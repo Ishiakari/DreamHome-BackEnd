@@ -2,6 +2,9 @@ from rest_framework import generics, serializers, permissions
 from .models import Advertisement, PropertyForRent, PropertyInspection, PropertyViewing
 from apps.users.models import Client
 
+# ✅ add this import (we created this file already)
+from .permissions import ReadOnlyOrAuthenticated
+
 # --- SERIALIZERS ---
 
 class PropertyForRentSerializer(serializers.ModelSerializer):
@@ -48,11 +51,11 @@ def get_client_profile_or_error(user):
 
 class PropertyForRentListCreateView(generics.ListCreateAPIView):
     """
-    This endpoint stays as the 'general list' (admin portal can see everything).
+    Public READ (GET), authenticated WRITE (POST).
     """
     queryset = PropertyForRent.objects.select_related("owner", "staff", "branch").all()
     serializer_class = PropertyForRentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [ReadOnlyOrAuthenticated]  # ✅ changed
 
     def perform_create(self, serializer):
         # Assign owner based on logged in user's Client profile
@@ -62,8 +65,7 @@ class PropertyForRentListCreateView(generics.ListCreateAPIView):
 
 class MyPropertyForRentListView(generics.ListAPIView):
     """
-    NEW endpoint: 'My Listings' (owner-only view).
-    This fixes the leak where owners could see other owners' properties.
+    'My Listings' (owner-only view).
     """
     serializer_class = PropertyForRentSerializer
     permission_classes = [permissions.IsAuthenticated]
