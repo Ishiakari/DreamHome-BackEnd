@@ -28,7 +28,7 @@ class Branch(models.Model):
     telephone_no = models.CharField(max_length=50)
     fax_no = models.CharField(max_length=50, blank=True, null=True)
 
-    manager = models.OneToOneField(
+    manager_no = models.OneToOneField(
         'users.Staff', 
         on_delete=models.SET_NULL, 
         null=True, 
