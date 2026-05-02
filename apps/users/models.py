@@ -20,10 +20,9 @@ class Staff(models.Model):
         SUPERVISOR = 'Supervisor', 'Supervisor'
         SECRETARY = 'Secretary', 'Secretarial Staff'
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='staff_profile')
+    user_no = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='staff_profile')
     staff_no = models.CharField(max_length=10, primary_key=True, editable=False, blank=True)
     email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
-    
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
@@ -99,12 +98,14 @@ class Staff(models.Model):
     def __str__(self):
         return f"{self.staff_no} - {self.first_name} {self.last_name} ({self.get_position_display()})"
 
+
+
 class Client(models.Model):
     class Role(models.TextChoices):
         RENTER = 'Renter', 'Renter'
         OWNER = 'Owner', 'Property Owner'
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='client_profile')
+    user_no = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name='client_profile')
     client_no = models.CharField(max_length=12, primary_key=True, editable=False, blank=True)
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.RENTER)
     first_name = models.CharField(max_length=100)
@@ -112,6 +113,32 @@ class Client(models.Model):
     address = models.CharField(max_length=255, default='Unknown Address')
     telephone_no = models.CharField(max_length=50)
     email = models.EmailField(max_length=255, unique=True, default='placeholder@example.com')
+
+    # --- NEW FIELDS BASED ON DIAGRAM ---
+    
+    date_registered = models.DateField(
+        auto_now_add=True, 
+        help_text="The date this client was registered.",
+        null=True, # Allow null to handle cases where the client might be created without a registration date
+    )
+    
+    registered_branch = models.ForeignKey(
+        'branches.Branch', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='registered_clients',
+        db_column='registering_branch_no' # Maps exactly to the column name in your image
+    )
+    
+    registered_staff = models.ForeignKey(
+        'users.Staff', # Assuming Staff is in your 'users' app from the previous context
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='registered_clients',
+        db_column='registering_staff_no' # Maps exactly to the column name in your image
+    )
 
     def __str__(self):
         return f"{self.client_no} - {self.first_name} {self.last_name} ({self.get_role_display()})"
@@ -121,7 +148,7 @@ class RenterRequirement(models.Model):
         HOUSE = 'House', 'House'
         FLAT = 'Flat', 'Flat'
 
-    client = models.OneToOneField(Client, on_delete=models.CASCADE, primary_key=True, related_name='renter_requirements')
+    client_no = models.OneToOneField(Client, on_delete=models.CASCADE, primary_key=True, related_name='renter_requirements')
     pref_property_type = models.CharField(max_length=50, choices=PropertyType.choices, blank=True, null=True)
     max_monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     general_comments = models.TextField(blank=True, null=True)
@@ -130,7 +157,7 @@ class RenterRequirement(models.Model):
         return f"Requirements for {self.client.first_name}"
 
 class NextOfKin(models.Model):
-    staff = models.OneToOneField(Staff, on_delete=models.CASCADE, primary_key=True, related_name='next_of_kin')
+    staff_no = models.OneToOneField(Staff, on_delete=models.CASCADE, primary_key=True, related_name='next_of_kin')
     full_name = models.CharField(max_length=255)
     relationship = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
