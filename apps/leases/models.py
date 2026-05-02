@@ -25,19 +25,19 @@ class LeaseAgreement(models.Model):
     
     # Relationships
     # 🌟 RULE: Only 'Renters' can sign leases
-    renter = models.ForeignKey(
+    renter_no = models.ForeignKey(
         'users.Client', 
         on_delete=models.PROTECT, # Protect history [source 80]
         related_name='leases',
         limit_choices_to={'role': 'Renter'}
     )
-    property = models.ForeignKey(
-        'properties.PropertyForRent', 
+    property_no = models.ForeignKey(
+        'properties.Property', 
         on_delete=models.PROTECT, 
         related_name='leases',
         limit_choices_to={'status': 'Available'}
     )
-    staff = models.ForeignKey(
+    staff_no = models.ForeignKey(
         'users.Staff', 
         on_delete=models.SET_NULL, 
         null=True, 
@@ -59,10 +59,10 @@ class LeaseAgreement(models.Model):
         
         super().save(*args, **kwargs) # Save the lease first
         
-        if is_new and self.property:
+        if is_new and self.property_no:
             # Assuming you used the PropertyStatus TextChoices we made earlier
-            self.property.status = 'Rented' 
-            self.property.save()
+            self.property_no.status = 'Rented' 
+            self.property_no.save()
 
     def __str__(self):
         return f"Lease {self.lease_no} for {self.property.property_no}"
