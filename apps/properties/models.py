@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 
-class PropertyForRent(models.Model):
+class Property(models.Model):
     
     # 🌟 NEW: Standardized choices for data consistency
     class PropertyType(models.TextChoices):
@@ -31,15 +31,15 @@ class PropertyForRent(models.Model):
     
     # Relationships
     # 🌟 UPDATED: Ensure only clients with the 'Owner' role can be assigned here
-    owner = models.ForeignKey(
+    owner_no = models.ForeignKey(
         'users.Client', 
         on_delete=models.CASCADE, 
         related_name='owned_properties',
         limit_choices_to={'role': 'Owner'}
     )
     
-    staff = models.ForeignKey('users.Staff', on_delete=models.SET_NULL, null=True, related_name='managed_properties')
-    branch = models.ForeignKey('branches.Branch', on_delete=models.CASCADE, related_name='properties')
+    staff_no = models.ForeignKey('users.Staff', on_delete=models.SET_NULL, null=True, related_name='managed_properties')
+    branch_no = models.ForeignKey('branches.Branch', on_delete=models.CASCADE, related_name='properties')
     date_withdrawn = models.DateField(blank=True, null=True, help_text="Date the property was removed from the market.")
     
     class Meta:
@@ -52,65 +52,113 @@ class PropertyForRent(models.Model):
         super().clean()
         
         # 🌟 BUSINESS RULE: A staff member can manage a max of 20 properties
-        if self.staff:
+        if self.staff_no:
             # Count current active properties managed by this staff member
             # We exclude 'Withdrawn' properties because the staff isn't actively managing them
-            current_managed_count = PropertyForRent.objects.filter(
-                staff=self.staff
+            current_managed_count = Property.objects.filter(
+                staff_no=self.staff_no, 
+                status__in=[self.PropertyStatus.AVAILABLE, self.PropertyStatus.RENTED]
             ).exclude(status=self.PropertyStatus.WITHDRAWN).count()
             
             # Check if this is a new property being added, or an existing property changing staff
-            if not self.pk or PropertyForRent.objects.get(pk=self.pk).staff != self.staff:
+            if not self.pk or Property.objects.get(pk=self.pk).staff_no != self.staff_no:
                 if current_managed_count >= 20:
                     raise ValidationError({
-                        "staff": f"{self.staff.first_name} {self.staff.last_name} already manages the maximum of 20 active properties."
+                        "staff_no": f"{self.staff_no.first_name} {self.staff_no.last_name} already manages the maximum of 20 active properties."
                     })
     
 class PropertyViewing(models.Model):
-    property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='viewings')
-    renter = models.ForeignKey(
+
+    property_no = models.ForeignKey(
+        Property, 
+        on_delete=models.CASCADE, 
+        related_name='viewings',
+        db_column='property_no',
+        null=True, # Allow null to handle cases where the property might be deleted or unavailable
+    )
+    
+    renter_no = models.ForeignKey(
         'users.Client', 
         on_delete=models.CASCADE, 
         related_name='viewings',
-        limit_choices_to={'role': 'Renter'}
+        limit_choices_to={'role': 'Renter'},
+        db_column='renter_no',
+        null=True, # Allow null to handle cases where the renter might be deleted
     )
+    
     view_date = models.DateField()
     comments = models.TextField(blank=True, null=True)
-    
+
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['property', 'renter', 'view_date'], name='unique_property_viewing')
+            models.UniqueConstraint(
+                fields=['property_no', 'renter_no', 'view_date'], 
+                name='unique_property_viewing'
+            )
         ]
     
     def __str__(self):
-        return f"{self.renter} viewed {self.property} on {self.view_date}"
-    
+        return f"Viewing for {self.property_no} on {self.view_date}"
+
 
 
 class PropertyInspection(models.Model):
-    property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='inspections')
-    staff = models.ForeignKey('users.Staff', on_delete=models.CASCADE, related_name='inspections')
+    
+    # Matching image_b3e157.png verbatim
+    property_no = models.ForeignKey(
+        Property, 
+        on_delete=models.CASCADE, 
+        related_name='inspections',
+        db_column='property_no',
+        null=True, # Allow null to handle cases where the property might be deleted or unavailable
+    )
+    
+    staff_no = models.ForeignKey(
+        'users.Staff', 
+        on_delete=models.CASCADE, 
+        related_name='inspections',
+        db_column='staff_no',
+        null=True, # Allow null to handle cases where the staff might be deleted
+    )
+    
     inspection_date = models.DateField()
     comments = models.TextField(blank=True, null=True)
     
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['property', 'inspection_date'], name='unique_property_inspection')
+            # Updated to use the new field name property_no
+            models.UniqueConstraint(
+                fields=['property_no', 'inspection_date'], 
+                name='unique_property_inspection'
+            )
         ]
     
     def __str__(self):
-        return f"Inspection for {self.property} on {self.inspection_date}"
-    
+        return f"Inspection for {self.property_no} on {self.inspection_date}"
     
 class Advertisement(models.Model):
-    property = models.ForeignKey(PropertyForRent, on_delete=models.CASCADE, related_name='advertisements')
+
+    
+    # Matching the field name and relationship in the diagram verbatim
+    property_no = models.ForeignKey(
+        Property, 
+        on_delete=models.CASCADE, 
+        related_name='advertisements',
+        db_column='property_no',
+        null=True,
+    )
+    
     newspaper_name = models.CharField(max_length=150)
     advert_date = models.DateField()
     
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['property', 'newspaper_name', 'advert_date'], name='unique_property_advert')
+            # Ensuring data integrity with a unique constraint on these fields
+            models.UniqueConstraint(
+                fields=['property_no', 'newspaper_name', 'advert_date'], 
+                name='unique_property_advert'
+            )
         ]
     
     def __str__(self):
-        return f"{self.property} advertised in {self.newspaper_name} on {self.advert_date}"
+        return f"Ad #{self.advertisement_no}: {self.property_no} in {self.newspaper_name}"
