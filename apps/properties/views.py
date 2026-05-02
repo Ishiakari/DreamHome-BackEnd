@@ -1,5 +1,6 @@
 from rest_framework import generics, serializers, permissions
-from .models import Advertisement, PropertyForRent, PropertyInspection, PropertyViewing
+# apps/properties/views.py
+from .models import Advertisement, Property, PropertyInspection, PropertyViewing
 from apps.users.models import Client
 
 # ✅ add this import (we created this file already)
@@ -9,7 +10,7 @@ from .permissions import ReadOnlyOrAuthenticated
 
 class PropertyForRentSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PropertyForRent
+        model = Property
         fields = "__all__"
         # owner is read-only because we set it automatically in the View
         read_only_fields = ["owner"]
@@ -42,7 +43,7 @@ def get_client_profile_or_error(user):
         raise serializers.ValidationError(
             {
                 "detail": "Your user account is not linked to a Client profile. "
-                          "Create a Client record for this user in the Admin panel."
+                        "Create a Client record for this user in the Admin panel."
             }
         )
 
@@ -53,7 +54,7 @@ class PropertyForRentListCreateView(generics.ListCreateAPIView):
     """
     Public READ (GET), authenticated WRITE (POST).
     """
-    queryset = PropertyForRent.objects.select_related("owner", "staff", "branch").all()
+    queryset = Property.objects.select_related("owner", "staff", "branch").all()
     serializer_class = PropertyForRentSerializer
     permission_classes = [ReadOnlyOrAuthenticated]  # ✅ changed
 
@@ -71,7 +72,7 @@ class MyPropertyForRentListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        base_qs = PropertyForRent.objects.select_related("owner", "staff", "branch")
+        base_qs = Property.objects.select_related("owner", "staff", "branch")
 
         client_profile = get_client_profile_or_error(self.request.user)
 
@@ -83,7 +84,7 @@ class MyPropertyForRentListView(generics.ListAPIView):
 
 
 class PropertyForRentDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = PropertyForRent.objects.select_related("owner", "staff", "branch").all()
+    queryset = Property.objects.select_related("owner", "staff", "branch").all()
     serializer_class = PropertyForRentSerializer
     lookup_field = "property_no"
     permission_classes = [permissions.IsAuthenticated]
