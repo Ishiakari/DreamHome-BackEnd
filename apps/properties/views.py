@@ -54,7 +54,7 @@ class PropertyForRentListCreateView(generics.ListCreateAPIView):
     """
     Public READ (GET), authenticated WRITE (POST).
     """
-    queryset = Property.objects.select_related("owner", "staff", "branch").all()
+    queryset = Property.objects.select_related("owner_no", "staff_no", "branch_no").all()
     serializer_class = PropertyForRentSerializer
     permission_classes = [ReadOnlyOrAuthenticated]  # ✅ changed
 
@@ -72,7 +72,7 @@ class MyPropertyForRentListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        base_qs = Property.objects.select_related("owner", "staff", "branch")
+        base_qs = Property.objects.select_related("owner_no", "staff_no", "branch_no")
 
         client_profile = get_client_profile_or_error(self.request.user)
 
@@ -84,7 +84,7 @@ class MyPropertyForRentListView(generics.ListAPIView):
 
 
 class PropertyForRentDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Property.objects.select_related("owner", "staff", "branch").all()
+    queryset = Property.objects.select_related("owner_no", "staff_no", "branch_no").all()
     serializer_class = PropertyForRentSerializer
     lookup_field = "property_no"
     permission_classes = [permissions.IsAuthenticated]
