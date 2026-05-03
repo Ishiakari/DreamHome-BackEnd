@@ -38,7 +38,7 @@ class AdvertisementSerializer(serializers.ModelSerializer):
 
 def get_client_profile_or_error(user):
     try:
-        return Client.objects.get(user=user)
+        return Client.objects.get(user_no=user)
     except Client.DoesNotExist:
         raise serializers.ValidationError(
             {
