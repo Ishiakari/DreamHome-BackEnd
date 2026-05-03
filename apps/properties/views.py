@@ -13,7 +13,7 @@ class PropertyForRentSerializer(serializers.ModelSerializer):
         model = Property
         fields = "__all__"
         # owner is read-only because we set it automatically in the View
-        read_only_fields = ["owner"]
+        read_only_fields = ["owner_no"]
 
 
 class PropertyViewingSerializer(serializers.ModelSerializer):
@@ -61,7 +61,7 @@ class PropertyForRentListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         # Assign owner based on logged in user's Client profile
         client_profile = get_client_profile_or_error(self.request.user)
-        serializer.save(owner=client_profile)
+        serializer.save(owner_no=client_profile)
 
 
 class MyPropertyForRentListView(generics.ListAPIView):
@@ -80,7 +80,7 @@ class MyPropertyForRentListView(generics.ListAPIView):
         if getattr(client_profile, "role", None) != "Owner":
             return base_qs.none()
 
-        return base_qs.filter(owner=client_profile)
+        return base_qs.filter(owner_no=client_profile)
 
 
 class PropertyForRentDetailView(generics.RetrieveUpdateDestroyAPIView):
