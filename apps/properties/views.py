@@ -13,7 +13,7 @@ class PropertyForRentSerializer(serializers.ModelSerializer):
         model = Property
         fields = "__all__"
         # owner is read-only because we set it automatically in the View
-        read_only_fields = ["owner_no"]
+        read_only_fields = ["property_no", "owner_no"]
 
 
 class PropertyViewingSerializer(serializers.ModelSerializer):
