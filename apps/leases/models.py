@@ -45,6 +45,10 @@ class LeaseAgreement(models.Model):
         limit_choices_to={'position__in': ['Manager', 'Supervisor']} # [source 115]
     )
     
+    class Meta:
+        verbose_name_plural = "Lease Agreements"
+        db_table = 'lease_agreement'
+    
     def clean(self):
         super().clean()
         
