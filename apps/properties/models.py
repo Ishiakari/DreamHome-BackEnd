@@ -67,6 +67,7 @@ class Property(models.Model):
 
     class Meta:
         verbose_name_plural = "Properties for Rent"
+        db_table = 'property'
 
     def __str__(self):
         return f"{self.property_no} - {self.street}, {self.city}"
@@ -142,6 +143,7 @@ class PropertyViewing(models.Model):
                 name="unique_property_viewing",
             )
         ]
+        db_table = 'property_viewing'
 
     def __str__(self):
         return f"Viewing for {self.property_no} on {self.view_date}"
@@ -174,7 +176,7 @@ class PropertyInspection(models.Model):
                 name="unique_property_inspection",
             )
         ]
-
+        db_table = 'property_inspection'
     def __str__(self):
         return f"Inspection for {self.property_no} on {self.inspection_date}"
 
@@ -198,6 +200,7 @@ class Advertisement(models.Model):
                 name="unique_property_advert",
             )
         ]
+        db_table = 'advertisement'
 
     def __str__(self):
         # Note: you reference advertisement_no here but that field isn't in this model.
