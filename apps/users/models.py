@@ -170,5 +170,5 @@ class NextOfKin(models.Model):
 @receiver(post_delete, sender=Staff)
 @receiver(post_delete, sender=Client)
 def delete_related_user(sender, instance, **kwargs):
-    if instance.user:
-        instance.user.delete()
+    if instance.user_no:
+        instance.user_no.delete()
