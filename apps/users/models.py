@@ -94,6 +94,7 @@ class Staff(models.Model):
 
     class Meta:
         verbose_name_plural = "Staff"
+        db_table = 'staff'
         
     def __str__(self):
         return f"{self.staff_no} - {self.first_name} {self.last_name} ({self.get_position_display()})"
@@ -139,6 +140,9 @@ class Client(models.Model):
         related_name='registered_clients',
         db_column='registering_staff_no' # Maps exactly to the column name in your image
     )
+    
+    class Meta:
+        db_table = 'client'
 
     def __str__(self):
         return f"{self.client_no} - {self.first_name} {self.last_name} ({self.get_role_display()})"
@@ -153,6 +157,9 @@ class RenterRequirement(models.Model):
     max_monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     general_comments = models.TextField(blank=True, null=True)
 
+    class Meta:
+        db_table = 'renter_requirement'
+
     def __str__(self):
         return f"Requirements for {self.client.first_name}"
 
@@ -165,6 +172,7 @@ class NextOfKin(models.Model):
 
     class Meta:
         verbose_name_plural = "Next of Kin"
+        db_table = 'next_of_kin'
 
 # 🌟 AUTOMATED CLEANUP SIGNAL
 @receiver(post_delete, sender=Staff)
