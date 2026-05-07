@@ -39,15 +39,13 @@ class Branch(models.Model):
 
     class Meta:
         verbose_name_plural = "Branches"
+        db_table = 'branch'
 
     def save(self, *args, **kwargs):
-        # Check if this is a brand new branch being created
         is_new = not self.branch_no
         
-        # Tell Django to save to the database. 
         super().save(*args, **kwargs)
         
-        #  If it was new, instantly fetch the ID the database just made
         if is_new:
             #  use telephone_no and street to find the EXACT branch we just saved
             db_record = Branch.objects.filter(telephone_no=self.telephone_no, street=self.street).first()
