@@ -1,6 +1,8 @@
+# pyrefly: ignore [missing-import]
 from rest_framework import generics, serializers, permissions
 # apps/properties/views.py
 from .models import Advertisement, Property, PropertyInspection, PropertyViewing
+# pyrefly: ignore [missing-import]
 from apps.users.models import Client
 
 # ✅ add this import (we created this file already)
@@ -87,7 +89,7 @@ class PropertyForRentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Property.objects.select_related("owner_no", "staff_no", "branch_no").all()
     serializer_class = PropertyForRentSerializer
     lookup_field = "property_no"
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [ReadOnlyOrAuthenticated]
 
 
 class PropertyViewingListCreateView(generics.ListCreateAPIView):
