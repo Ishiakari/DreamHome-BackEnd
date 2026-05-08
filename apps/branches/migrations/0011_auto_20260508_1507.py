@@ -10,4 +10,96 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL(
+            sql="""
+                CREATE OR REPLACE FUNCTION fn_trigger_validate_staff_assignment()
+                RETURNS TRIGGER
+                LANGUAGE plpgsql
+                AS $$
+                DECLARE
+                    v_supervisor_position TEXT;
+                    v_supervisor_branch VARCHAR;
+                    v_subordinate_count INTEGER;
+                BEGIN
+                    -- 1. Validate Position Role
+                    IF NEW.position NOT IN ('Staff', 'Supervisor', 'Secretary', 'Manager') THEN
+                        RAISE EXCEPTION 'Invalid position: %', NEW.position;
+                    END IF;
+
+                    -- 2. Mandatory Branch for Higher Roles
+                    IF NEW.position <> 'Staff' AND NEW.branch_id IS NULL THEN
+                        RAISE EXCEPTION 'Branch is required for % responsibility', NEW.position;
+                    END IF;
+
+                    -- 3. Branch Existence Check
+                    IF NEW.branch_id IS NOT NULL
+                    AND NOT EXISTS (SELECT 1 FROM branch WHERE branch_no = NEW.branch_id) THEN
+                        RAISE EXCEPTION 'Branch % not found', NEW.branch_id;
+                    END IF;
+
+                    -- 4. Supervisor Logic
+                    IF NEW.supervisor_id IS NOT NULL THEN
+                        -- Prevent infinite loops: Staff cannot supervise themselves
+                        IF NEW.staff_no IS NOT NULL AND NEW.supervisor_id = NEW.staff_no THEN
+                            RAISE EXCEPTION 'Staff cannot supervise themselves';
+                        END IF;
+
+                        -- Fetch the assigned supervisor's details
+                        SELECT position, branch_id
+                        INTO v_supervisor_position, v_supervisor_branch
+                        FROM staff
+                        WHERE staff_no = NEW.supervisor_id;
+
+                        IF NOT FOUND THEN
+                            RAISE EXCEPTION 'Supervisor % not found', NEW.supervisor_id;
+                        END IF;
+
+                        IF v_supervisor_position <> 'Supervisor' THEN
+                            RAISE EXCEPTION 'Assigned supervisor % must have the position of Supervisor', NEW.supervisor_id;
+                        END IF;
+
+                        IF NEW.branch_id IS NOT NULL
+                        AND v_supervisor_branch IS NOT NULL
+                        AND v_supervisor_branch <> NEW.branch_id THEN
+                            RAISE EXCEPTION 'Supervisor must be in the same branch as the subordinate';
+                        END IF;
+
+                        -- Span of Control: Ensure supervisor has fewer than 10 subordinates
+                        SELECT count(*)
+                        INTO v_subordinate_count
+                        FROM staff
+                        WHERE supervisor_id = NEW.supervisor_id
+                        AND (NEW.staff_no IS NULL OR staff_no <> NEW.staff_no); -- Excludes current row during an UPDATE
+
+                        IF v_subordinate_count >= 10 THEN
+                            RAISE EXCEPTION 'Supervisor % already has 10 subordinates', NEW.supervisor_id;
+                        END IF;
+                    END IF;
+
+                    -- 5. Manager Limit Check (Only one Manager per branch)
+                    IF NEW.position = 'Manager' AND NEW.branch_id IS NOT NULL THEN
+                        IF EXISTS (
+                            SELECT 1
+                            FROM staff
+                            WHERE branch_id = NEW.branch_id
+                            AND position = 'Manager'
+                            AND (NEW.staff_no IS NULL OR staff_no <> NEW.staff_no)
+                        ) THEN
+                            RAISE EXCEPTION 'Branch % already has a manager', NEW.branch_id;
+                        END IF;
+                    END IF;
+
+                    RETURN NEW;
+                END;
+                $$;
+
+                -- Apply the Trigger to the staff table
+                DROP TRIGGER IF EXISTS trg_validate_staff_assignment ON staff;
+
+                CREATE TRIGGER trg_validate_staff_assignment
+                BEFORE INSERT OR UPDATE ON staff
+                FOR EACH ROW
+                EXECUTE FUNCTION fn_trigger_validate_staff_assignment();
+            """
+        )
     ]
