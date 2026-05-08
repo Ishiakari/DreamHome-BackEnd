@@ -24,7 +24,6 @@ class Migration(migrations.Migration):
                 RETURN active_count;
             END;
             $$ LANGUAGE plpgsql;
-
             -- SELECT get_active_property_count();
             
             -- 2. CREATE FUNCTION TO GET PROPERTY DETAILS BY ID
