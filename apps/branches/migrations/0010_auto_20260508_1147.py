@@ -7,6 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('branches', '0009_auto_20260508_1111'),
+        ('users', '0010_alter_client_table_alter_nextofkin_table_and_more'),
     ]
 
     operations = [
