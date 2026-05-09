@@ -98,6 +98,21 @@ class PropertyViewingListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
+class MyPropertyViewingListView(generics.ListAPIView):
+    """
+    Returns only the viewings that belong to the currently logged-in renter.
+    GET /api/properties/viewings/my/
+    """
+    serializer_class = PropertyViewingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        client_profile = get_client_profile_or_error(self.request.user)
+        return PropertyViewing.objects.select_related("property_no", "renter_no").filter(
+            renter_no=client_profile
+        ).order_by("-view_date")
+
+
 class PropertyViewingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = PropertyViewing.objects.select_related("property", "renter").all()
     serializer_class = PropertyViewingSerializer
