@@ -1,9 +1,9 @@
 from rest_framework import generics, serializers
 from rest_framework.permissions import BasePermission, SAFE_METHODS
- 
+
 from .models import LeaseAgreement
- 
- 
+
+
 class IsManagerOrAdmin(BasePermission):
     """Only Managers, Supervisors, and Admins can write leases. All staff can read."""
     def has_permission(self, request, view):
@@ -18,16 +18,22 @@ class IsManagerOrAdmin(BasePermission):
             return position in ["Manager", "Supervisor"]
         except Exception:
             return False
- 
- 
+
+
 class LeaseAgreementSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaseAgreement
         fields = "__all__"
- 
- 
+
+
 class LeaseAgreementListCreateView(generics.ListCreateAPIView):
     queryset = LeaseAgreement.objects.select_related("renter_no", "property_no", "staff_no").all()
     serializer_class = LeaseAgreementSerializer
-    permission_classes = [IsManagerOrAdmin]   # ✅ Only Manager/Admin can create leases
- 
+    permission_classes = [IsManagerOrAdmin]
+
+
+class LeaseAgreementDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = LeaseAgreement.objects.select_related("renter_no", "property_no", "staff_no").all()
+    serializer_class = LeaseAgreementSerializer
+    lookup_field = "lease_no"
+    permission_classes = [IsManagerOrAdmin]
