@@ -25,6 +25,8 @@ class Staff(models.Model):
     email = models.EmailField(max_length=255, unique=True, null=True, blank=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
+    middle_name = models.CharField(max_length=100, blank=True, null=True)
+    Suffixes = models.CharField(max_length=10, blank=True, null=True)
     address = models.CharField(max_length=255)
     telephone_no = models.CharField(max_length=50)
     sex = models.CharField(max_length=10, choices=SEX_CHOICES)
