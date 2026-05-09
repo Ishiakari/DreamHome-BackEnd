@@ -162,8 +162,8 @@ class RenterRequirement(models.Model):
 
 class NextOfKin(models.Model):
     staff_no = models.OneToOneField(Staff, on_delete=models.CASCADE, primary_key=True, related_name='next_of_kin')
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    first_name = models.CharField(max_length=100, blank=True, null=True)
+    last_name = models.CharField(max_length=100, blank=True, null=True)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     Suffixes = models.CharField(max_length=10, blank=True, null=True)
     relationship = models.CharField(max_length=100)
