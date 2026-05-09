@@ -33,12 +33,7 @@ class Staff(models.Model):
     dob = models.DateField(verbose_name="Date of Birth")
     nin = models.CharField(max_length=50, verbose_name="National Insurance Number")
     
-    position = models.CharField(
-        max_length=50,
-        choices=Position.choices,
-        default=Position.STAFF, 
-        help_text="Select the official job title."
-    ) 
+    position = models.CharField(max_length=50, choices=Position.choices, default=Position.STAFF,    help_text="Select the official job title.") 
     
     salary = models.DecimalField(max_digits=10, decimal_places=2)
     date_joined = models.DateField()
@@ -113,6 +108,8 @@ class Client(models.Model):
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.RENTER)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
+    middle_name = models.CharField(max_length=100, blank=True, null=True)
+    Suffixes = models.CharField(max_length=10, blank=True, null=True)
     address = models.CharField(max_length=255, default='Unknown Address')
     telephone_no = models.CharField(max_length=50)
     email = models.EmailField(max_length=255, unique=True, default='placeholder@example.com')
