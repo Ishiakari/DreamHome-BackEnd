@@ -68,7 +68,6 @@ class Staff(models.Model):
     def clean(self):
         super().clean()
         
-        # Role-specific Validation
         if self.position == self.Position.SECRETARY:
             if self.typing_speed is None:
                 raise ValidationError({"typing_speed": "Secretarial staff must have a recorded typing speed."})
@@ -76,7 +75,6 @@ class Staff(models.Model):
             if not self.manager_start_date:
                 raise ValidationError({"manager_start_date": "Managers must have a start date."})
         else:
-            # Clear fields if position changes from Manager/Secretary to something else
             self.typing_speed = None
             self.manager_start_date = None
 
@@ -128,16 +126,16 @@ class Client(models.Model):
         null=True, 
         blank=True,
         related_name='registered_clients',
-        db_column='registering_branch_no' # Maps exactly to the column name in your image
+        db_column='registering_branch_no' 
     )
     
     registered_staff = models.ForeignKey(
-        'users.Staff', # Assuming Staff is in your 'users' app from the previous context
+        'users.Staff', 
         on_delete=models.SET_NULL, 
         null=True, 
         blank=True,
         related_name='registered_clients',
-        db_column='registering_staff_no' # Maps exactly to the column name in your image
+        db_column='registering_staff_no' 
     )
     
     class Meta:
@@ -164,7 +162,10 @@ class RenterRequirement(models.Model):
 
 class NextOfKin(models.Model):
     staff_no = models.OneToOneField(Staff, on_delete=models.CASCADE, primary_key=True, related_name='next_of_kin')
-    full_name = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    middle_name = models.CharField(max_length=100, blank=True, null=True)
+    Suffixes = models.CharField(max_length=10, blank=True, null=True)
     relationship = models.CharField(max_length=100)
     address = models.CharField(max_length=255)
     telephone_no = models.CharField(max_length=50)
