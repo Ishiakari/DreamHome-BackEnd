@@ -197,19 +197,39 @@ class ClientSerializer(serializers.ModelSerializer):
 
         return instance
 
-
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
+ 
+        # Client (Renter or Owner)
         try:
             client_profile = user.client_profile
-            token["role"] = client_profile.role
+            token["role"] = client_profile.role          # "Renter" or "Owner"
             token["first_name"] = client_profile.first_name
+            return token
         except Exception:
-            token["role"] = "ADMIN"
+            pass
+ 
+        # Staff (Manager, Supervisor, Secretary, Staff)
+        try:
+            staff_profile = user.staff_profile
+            token["first_name"] = staff_profile.first_name
+            # Superuser = ADMIN, everyone else = their actual position
+            if user.is_superuser:
+                token["role"] = "ADMIN"
+            else:
+                token["role"] = staff_profile.position  # e.g. "Manager", "Staff", "Supervisor", "Secretary"
+            return token
+        except Exception:
+            pass
+ 
+        # Fallback for bare superusers with no staff/client profile
+        token["role"] = "ADMIN"
+        token["first_name"] = user.first_name or user.username
         return token
-
-
+ 
+ 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+ 

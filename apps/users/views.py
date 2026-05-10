@@ -1,86 +1,117 @@
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import permissions
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 
 from .models import Client, Staff
 from .serializers import ClientSerializer, StaffSerializer, MyTokenObtainPairSerializer
 
-# ==========================================
-# VIEWS (The Doorways)
-# ==========================================
 
-@api_view(["GET"])
-def users_api_root(request):
-    return Response(
-        {
-            "staff": "/api/users/staff/",
-            "clients": "/api/users/clients/", # Replaced renters/owners with unified endpoint
-        }
-    )
+# ============================================================
+# PERMISSION CLASSES
+# ============================================================
 
-class IsAdminUser(permissions.BasePermission):
-    """
-    Custom permission to only allow Staff/Admin roles.
-    """
+class IsAdminRole(BasePermission):
+    """Only superusers (ADMIN role) can access."""
     def has_permission(self, request, view):
-        # Check if the user is logged in AND has the correct role
+        return request.user.is_authenticated and request.user.is_superuser
+
+
+class IsStaffOrAdmin(BasePermission):
+    """Any logged-in staff member or superuser can access."""
+    def has_permission(self, request, view):
         return request.user.is_authenticated and (
-            request.user.is_staff or 
-            getattr(request.user, 'role', None) == 'STAFF'
+            request.user.is_superuser or request.user.is_staff
         )
 
 
-class StaffListView(generics.ListAPIView):
-    queryset = Staff.objects.all()
-    serializer_class = StaffSerializer
-    # 🛡️ ONLY the Admin Repo (using a Staff account) can see this!
-    permission_classes = [IsAdminUser]
+class IsManagerOrAdmin(BasePermission):
+    """Only Managers, Supervisors, and Admins can access."""
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser:
+            return True
+        try:
+            position = request.user.staff_profile.position
+            return position in ["Manager", "Supervisor"]
+        except Exception:
+            return False
+
+
+class ReadOnlyOrManagerAdmin(BasePermission):
+    """GET is allowed for any staff. Write (POST/PUT/DELETE) requires Manager or Admin."""
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.is_staff or request.user.is_superuser
+        # Write operations
+        if request.user.is_superuser:
+            return True
+        try:
+            position = request.user.staff_profile.position
+            return position in ["Manager", "Supervisor"]
+        except Exception:
+            return False
+
+
+# ============================================================
+# VIEWS
+# ============================================================
+
+@api_view(["GET"])
+def users_api_root(request):
+    return Response({
+        "staff": "/api/users/staff/",
+        "clients": "/api/users/clients/",
+    })
+
 
 # --- STAFF VIEWS ---
-
+# Admin only: full CRUD on staff
 class StaffListCreateView(generics.ListCreateAPIView):
     queryset = Staff.objects.select_related("branch", "supervisor").all()
     serializer_class = StaffSerializer
+    permission_classes = [IsAdminRole]          # ✅ Only ADMIN can create/list staff
+
 
 class StaffDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Staff.objects.select_related("branch", "supervisor").all()
     serializer_class = StaffSerializer
     lookup_field = "staff_no"
+    permission_classes = [IsAdminRole]          # ✅ Only ADMIN can edit/delete staff
 
 
-# --- CLIENT VIEWS (Handles both Renters and Owners) ---
-
+# --- CLIENT VIEWS ---
+# Managers + Admins: full CRUD. Regular staff: read-only.
 class ClientListCreateView(generics.ListCreateAPIView):
     serializer_class = ClientSerializer
+    permission_classes = [ReadOnlyOrManagerAdmin]  # ✅ Staff can view, Manager/Admin can create
 
     def get_queryset(self):
-        """
-        This allows the frontend to easily filter by role.
-        Example: /api/users/clients/?role=RENTER
-        """
         queryset = Client.objects.all()
-        role = self.request.query_params.get('role')
+        role = self.request.query_params.get("role")
         if role:
-            # Filters the database before sending the JSON back
-            queryset = queryset.filter(role=role.upper())
+            queryset = queryset.filter(role=role.capitalize())
         return queryset
+
 
 class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Client.objects.all()
     serializer_class = ClientSerializer
     lookup_field = "client_no"
+    permission_classes = [ReadOnlyOrManagerAdmin]  # ✅ Staff can view, Manager/Admin can edit
 
 
+# --- CURRENT USER (PROFILE) ---
 class CurrentUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        
-        # Basic data that everyone has
+
         data = {
             "fullName": f"{user.first_name} {user.last_name}".strip() or user.username,
             "firstName": user.first_name,
@@ -89,52 +120,48 @@ class CurrentUserView(APIView):
             "role": "ADMIN" if user.is_superuser else "STAFF",
         }
 
-        # 🌟 Improved logic: Adds ALL fields from the Client model
-        if hasattr(user, 'client_profile'):
+        if hasattr(user, "client_profile"):
             client = user.client_profile
             data.update({
                 "client_no": client.client_no,
                 "role": client.role,
                 "telephoneNo": client.telephone_no,
-                "address": client.address
+                "address": client.address,
             })
 
-        elif hasattr(user, 'staff_profile'):
+        elif hasattr(user, "staff_profile"):
             staff = user.staff_profile
             data.update({
                 "staff_no": staff.staff_no,
-                "role": "STAFF",
+                # ✅ Return actual position, not generic "STAFF"
+                "role": "ADMIN" if user.is_superuser else staff.position,
                 "telephoneNo": staff.telephone_no,
                 "address": staff.address,
-                "branchCode": staff.branch.branch_no if staff.branch else "HQ"
+                "branchCode": staff.branch.branch_no if staff.branch else "HQ",
             })
 
         return Response({"user": data})
 
-    # 🌟 NEW: Handles the actual "Save" click from Next.js
     def put(self, request):
         user = request.user
-        
-        if hasattr(user, 'client_profile'):
+
+        if hasattr(user, "client_profile"):
             serializer = ClientSerializer(user.client_profile, data=request.data, partial=True)
-        elif hasattr(user, 'staff_profile'):
+        elif hasattr(user, "staff_profile"):
             serializer = StaffSerializer(user.staff_profile, data=request.data, partial=True)
         else:
             return Response({"error": "No profile found."}, status=404)
 
         if serializer.is_valid():
             serializer.save()
-            
-            # 🌟 THE FINAL BOSS FIX: Generate fresh tokens with the NEW data baked in!
             refresh = MyTokenObtainPairSerializer.get_token(user)
-            
             return Response({
-                "message": "Profile updated!", 
+                "message": "Profile updated!",
                 "user": serializer.data,
                 "tokens": {
                     "refresh": str(refresh),
                     "access": str(refresh.access_token),
-                }
+                },
             })
-        
+
         return Response(serializer.errors, status=400)

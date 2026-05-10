@@ -19,7 +19,7 @@ CREATE OR REPLACE FUNCTION get_branch_client_count(p_branch_no VARCHAR)
 RETURNS TABLE (
     total_owners INTEGER,
     total_renters INTEGER
-) AS $$
+) AS $$venv\Scripts\activate
 BEGIN
     RETURN QUERY
     SELECT 
