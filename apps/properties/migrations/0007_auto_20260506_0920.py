@@ -23,7 +23,7 @@ DECLARE
 BEGIN
     -- Directly count properties for the specific owner_id
     SELECT COUNT(*) INTO v_count
-    FROM properties_property
+    FROM property
     WHERE owner_id = p_owner_id;
     
     RETURN v_count;
