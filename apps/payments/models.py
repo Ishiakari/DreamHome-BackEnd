@@ -58,6 +58,22 @@ class Payment(models.Model):
         db_table = 'payment' 
         ordering = ['-payment_date'] 
 
+    def save(self, *args, **kwargs):
+        if not self.payment_no:
+            # Simple sequence: PAY-001, PAY-002, etc.
+            last_payment = Payment.objects.all().order_by("-payment_no").first()
+            if last_payment and last_payment.payment_no.startswith("PAY-"):
+                try:
+                    last_id = int(last_payment.payment_no.split("-")[1])
+                    new_id = last_id + 1
+                except (IndexError, ValueError):
+                    new_id = 1
+            else:
+                new_id = 1
+            self.payment_no = f"PAY-{new_id:03d}"
+        
+        super().save(*args, **kwargs)
+
     def __str__(self):
         # self.lease_id fetches the 'lease_no' string without making an extra database query
         return f"Payment {self.payment_no} for Lease {self.lease_id} - {self.get_status_display()}"
