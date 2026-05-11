@@ -2,7 +2,7 @@ from rest_framework import generics, permissions
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.permissions import IsAuthenticated, BasePermission, AllowAny
 
 from .models import Client, Staff
 from .serializers import ClientSerializer, StaffSerializer, MyTokenObtainPairSerializer
@@ -85,10 +85,14 @@ class StaffDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # --- CLIENT VIEWS ---
-# Managers + Admins: full CRUD. Regular staff: read-only.
+# Managers + Admins: full CRUD. Regular staff: read-only. Unauthenticated can POST (Sign Up).
 class ClientListCreateView(generics.ListCreateAPIView):
     serializer_class = ClientSerializer
-    permission_classes = [ReadOnlyOrManagerAdmin]  # ✅ Staff can view, Manager/Admin can create
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [AllowAny()]
+        return [ReadOnlyOrManagerAdmin()]
 
     def get_queryset(self):
         queryset = Client.objects.all()
