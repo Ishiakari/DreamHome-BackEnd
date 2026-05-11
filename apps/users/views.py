@@ -2,7 +2,7 @@ from rest_framework import generics, permissions
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated, BasePermission
+from rest_framework.permissions import IsAuthenticated, BasePermission, AllowAny
 
 from .models import Client, Staff
 from .serializers import ClientSerializer, StaffSerializer, MyTokenObtainPairSerializer
@@ -66,6 +66,7 @@ def users_api_root(request):
     return Response({
         "staff": "/api/users/staff/",
         "clients": "/api/users/clients/",
+        "signup": "/api/users/signup/",
     })
 
 
@@ -103,6 +104,15 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ClientSerializer
     lookup_field = "client_no"
     permission_classes = [ReadOnlyOrManagerAdmin]  # ✅ Staff can view, Manager/Admin can edit
+
+
+class PublicClientSignupView(generics.CreateAPIView):
+    serializer_class = ClientSerializer
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        # Prevent public signups from assigning internal registration fields.
+        serializer.save(registered_branch=None, registered_staff=None)
 
 
 # --- CURRENT USER (PROFILE) ---
