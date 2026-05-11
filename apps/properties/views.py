@@ -22,6 +22,7 @@ class PropertyViewingSerializer(serializers.ModelSerializer):
     class Meta:
         model = PropertyViewing
         fields = "__all__"
+        read_only_fields = ["renter_no"]
 
 
 class PropertyInspectionSerializer(serializers.ModelSerializer):
@@ -98,9 +99,16 @@ class PropertyForRentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class PropertyViewingListCreateView(generics.ListCreateAPIView):
-    queryset = PropertyViewing.objects.select_related("property", "renter").all()
+    queryset = PropertyViewing.objects.select_related("property_no", "renter_no").all()
     serializer_class = PropertyViewingSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        client_profile = get_client_profile_or_error(self.request.user)
+        if getattr(client_profile, "role", None) != "Renter":
+            raise serializers.ValidationError({"detail": "Only renters can request viewings."})
+
+        serializer.save(renter_no=client_profile)
 
 
 class MyPropertyViewingListView(generics.ListAPIView):
@@ -119,7 +127,7 @@ class MyPropertyViewingListView(generics.ListAPIView):
 
 
 class PropertyViewingDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = PropertyViewing.objects.select_related("property", "renter").all()
+    queryset = PropertyViewing.objects.select_related("property_no", "renter_no").all()
     serializer_class = PropertyViewingSerializer
     permission_classes = [permissions.IsAuthenticated]
 
