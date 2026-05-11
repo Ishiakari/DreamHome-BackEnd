@@ -194,7 +194,7 @@ class PropertyInspectionDetailView(generics.RetrieveUpdateDestroyAPIView):
 class AdvertisementListCreateView(generics.ListCreateAPIView):
     queryset = Advertisement.objects.select_related("property_no", "assigned_by").all()
     serializer_class = AdvertisementSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [ReadOnlyOrAuthenticated]
 
     def perform_create(self, serializer):
         staff_profile = getattr(self.request.user, "staff_profile", None)
@@ -204,4 +204,4 @@ class AdvertisementListCreateView(generics.ListCreateAPIView):
 class AdvertisementDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Advertisement.objects.select_related("property_no", "assigned_by").all()
     serializer_class = AdvertisementSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [ReadOnlyOrAuthenticated]
