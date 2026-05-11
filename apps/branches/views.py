@@ -17,6 +17,14 @@ class BranchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branch
         fields = "__all__"
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Inject nested manager data for frontend display
+        if instance.manager_no:
+            from apps.users.serializers import StaffSerializer
+            representation['manager_no'] = StaffSerializer(instance.manager_no).data
+        return representation
  
  
 class BranchListCreateView(generics.ListCreateAPIView):
