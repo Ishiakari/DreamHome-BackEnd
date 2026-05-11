@@ -86,10 +86,14 @@ class StaffDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # --- CLIENT VIEWS ---
-# Managers + Admins: full CRUD. Regular staff: read-only.
+# Managers + Admins: full CRUD. Regular staff: read-only. Unauthenticated can POST (Sign Up).
 class ClientListCreateView(generics.ListCreateAPIView):
     serializer_class = ClientSerializer
-    permission_classes = [ReadOnlyOrManagerAdmin]  # ✅ Staff can view, Manager/Admin can create
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [AllowAny()]
+        return [ReadOnlyOrManagerAdmin()]
 
     def get_queryset(self):
         queryset = Client.objects.all()
