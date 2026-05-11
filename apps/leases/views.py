@@ -21,9 +21,29 @@ class IsManagerOrAdmin(BasePermission):
 
 
 class LeaseAgreementSerializer(serializers.ModelSerializer):
+    # Overriding property_no to bypass model's limit_choices_to={'status': 'Available'} 
+    # which prevents editing leases once the property status changes to 'Rented'.
+    from apps.properties.models import Property
+    property_no = serializers.PrimaryKeyRelatedField(queryset=Property.objects.all())
+
     class Meta:
         model = LeaseAgreement
         fields = "__all__"
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        
+        # Inject nested data for better frontend display
+        # Note: We import here to avoid potential circular dependencies
+        from apps.properties.views import PropertyForRentSerializer
+        from apps.users.serializers import ClientSerializer
+        
+        if instance.property_no:
+            representation['property_no'] = PropertyForRentSerializer(instance.property_no).data
+        if instance.renter_no:
+            representation['renter_no'] = ClientSerializer(instance.renter_no).data
+            
+        return representation
 
 
 class LeaseAgreementListCreateView(generics.ListCreateAPIView):
