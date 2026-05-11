@@ -4,12 +4,12 @@ from .models import Branch
  
  
 class IsAdminRole(BasePermission):
-    """Only superusers can write. All authenticated staff can read."""
+    """Only superusers can write. Anyone can read (public frontend)."""
     def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True  # Anyone can view
         if not request.user.is_authenticated:
             return False
-        if request.method in SAFE_METHODS:
-            return True  # Any logged-in user can GET
         return request.user.is_superuser  # Only ADMIN can POST/PUT/DELETE
  
  
