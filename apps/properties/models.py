@@ -116,6 +116,12 @@ class Property(models.Model):
 
 
 class PropertyViewing(models.Model):
+    class ViewingStatus(models.TextChoices):
+        REQUESTED = "Requested", "Requested"
+        APPROVED = "Approved", "Approved"
+        REJECTED = "Rejected", "Rejected"
+        CANCELLED = "Cancelled", "Cancelled"
+
     property_no = models.ForeignKey(
         Property,
         on_delete=models.CASCADE,
@@ -135,6 +141,21 @@ class PropertyViewing(models.Model):
 
     view_date = models.DateField()
     comments = models.TextField(blank=True, null=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=ViewingStatus.choices,
+        default=ViewingStatus.REQUESTED,
+    )
+    decided_by = models.ForeignKey(
+        "users.Staff",
+        on_delete=models.SET_NULL,
+        related_name="decided_viewings",
+        db_column="decided_by",
+        null=True,
+        blank=True,
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [

@@ -1,5 +1,6 @@
 # pyrefly: ignore [missing-import]
 from rest_framework import generics, serializers, permissions
+from django.utils import timezone
 # apps/properties/views.py
 from .models import Advertisement, Property, PropertyInspection, PropertyViewing
 # pyrefly: ignore [missing-import]
@@ -22,7 +23,7 @@ class PropertyViewingSerializer(serializers.ModelSerializer):
     class Meta:
         model = PropertyViewing
         fields = "__all__"
-        read_only_fields = ["renter_no"]
+        read_only_fields = ["renter_no", "decided_by", "decided_at"]
 
 
 class PropertyInspectionSerializer(serializers.ModelSerializer):
@@ -49,6 +50,10 @@ def get_client_profile_or_error(user):
                         "Create a Client record for this user in the Admin panel."
             }
         )
+
+
+def is_staff_user(user):
+    return bool(user and user.is_authenticated and (user.is_superuser or user.is_staff or hasattr(user, "staff_profile")))
 
 
 # --- VIEWS ---
@@ -108,7 +113,10 @@ class PropertyViewingListCreateView(generics.ListCreateAPIView):
         if getattr(client_profile, "role", None) != "Renter":
             raise serializers.ValidationError({"detail": "Only renters can request viewings."})
 
-        serializer.save(renter_no=client_profile)
+        serializer.save(
+            renter_no=client_profile,
+            status=PropertyViewing.ViewingStatus.REQUESTED,
+        )
 
 
 class MyPropertyViewingListView(generics.ListAPIView):
@@ -130,6 +138,44 @@ class PropertyViewingDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = PropertyViewing.objects.select_related("property_no", "renter_no").all()
     serializer_class = PropertyViewingSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def perform_update(self, serializer):
+        allowed_fields = {"status"}
+        for key in list(serializer.validated_data.keys()):
+            if key not in allowed_fields:
+                serializer.validated_data.pop(key)
+
+        user = self.request.user
+        instance = self.get_object()
+
+        if is_staff_user(user):
+            new_status = serializer.validated_data.get("status")
+            if new_status not in [
+                PropertyViewing.ViewingStatus.APPROVED,
+                PropertyViewing.ViewingStatus.REJECTED,
+            ]:
+                raise serializers.ValidationError({"detail": "Staff can only approve or reject viewings."})
+
+            staff_profile = getattr(user, "staff_profile", None)
+            serializer.save(
+                status=new_status,
+                decided_by=staff_profile,
+                decided_at=timezone.now(),
+            )
+            return
+
+        client_profile = get_client_profile_or_error(user)
+        if instance.renter_no != client_profile:
+            raise serializers.ValidationError({"detail": "You can only update your own viewing requests."})
+
+        new_status = serializer.validated_data.get("status")
+        if new_status != PropertyViewing.ViewingStatus.CANCELLED:
+            raise serializers.ValidationError({"detail": "Renters can only cancel their own viewings."})
+
+        if instance.status != PropertyViewing.ViewingStatus.REQUESTED:
+            raise serializers.ValidationError({"detail": "Only requested viewings can be cancelled."})
+
+        serializer.save(status=PropertyViewing.ViewingStatus.CANCELLED)
 
 
 class PropertyInspectionListCreateView(generics.ListCreateAPIView):
