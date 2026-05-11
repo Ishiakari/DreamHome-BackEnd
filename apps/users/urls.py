@@ -15,4 +15,7 @@ urlpatterns = [
     # 🌟 Unified Client URLs (Handles both Renters and Owners)
     path("clients/", views.ClientListCreateView.as_view(), name="client-list-create"),
     path("clients/<str:client_no>/", views.ClientDetailView.as_view(), name="client-detail"),
+
+    # Public Signup (Web Registrations)
+    path("signup/", views.PublicClientSignupView.as_view(), name="public-client-signup"),
 ]
