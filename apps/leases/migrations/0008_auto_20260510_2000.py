@@ -84,7 +84,7 @@ class Migration(migrations.Migration):
                 SELECT COUNT(*) INTO v_active_leases
                 FROM lease_agreement
                 WHERE property_no_id = p_property_no
-                  AND (rent_start <= p_rent_finish AND rent_finish >= p_rent_start);
+                    AND (rent_start <= p_rent_finish AND rent_finish >= p_rent_start);
 
                 IF v_active_leases > 0 THEN
                     RAISE EXCEPTION 'Double-booking prevented: This property already has an active lease during this timeframe.';
