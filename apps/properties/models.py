@@ -1,6 +1,16 @@
+from datetime import timedelta
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 import re
+
+
+def default_advertisement_start_date():
+    return timezone.localdate()
+
+
+def default_advertisement_end_date():
+    return timezone.localdate() + timedelta(days=30)
 
 
 class Property(models.Model):
@@ -213,27 +223,53 @@ class PropertyInspection(models.Model):
 
 
 class Advertisement(models.Model):
+    class AdvertisementStatus(models.TextChoices):
+        DRAFT = "Draft", "Draft"
+        ACTIVE = "Active", "Active"
+        ARCHIVED = "Archived", "Archived"
+
+    class AdvertisementPlacement(models.TextChoices):
+        POPUP = "Popup", "Popup"
+        BANNER = "Banner", "Banner"
+        SECTION = "Section", "Section"
+
     property_no = models.ForeignKey(
         Property,
         on_delete=models.CASCADE,
         related_name="advertisements",
         db_column="property_no",
         null=True,
+        blank=True,
     )
 
-    newspaper_name = models.CharField(max_length=150)
-    advert_date = models.DateField()
+    title = models.CharField(max_length=200, default="Untitled Advertisement")
+    message = models.TextField(default="Legacy advertisement (please update)")
+    status = models.CharField(
+        max_length=20,
+        choices=AdvertisementStatus.choices,
+        default=AdvertisementStatus.DRAFT,
+    )
+    start_date = models.DateField(default=default_advertisement_start_date)
+    end_date = models.DateField(default=default_advertisement_end_date)
+    priority = models.IntegerField(default=0)
+    placement = models.CharField(
+        max_length=20,
+        choices=AdvertisementPlacement.choices,
+        default=AdvertisementPlacement.POPUP,
+    )
+    assigned_by = models.ForeignKey(
+        "users.Staff",
+        on_delete=models.SET_NULL,
+        related_name="assigned_advertisements",
+        db_column="assigned_by",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["property_no", "newspaper_name", "advert_date"],
-                name="unique_property_advert",
-            )
-        ]
         db_table = 'advertisement'
 
     def __str__(self):
-        # Note: you reference advertisement_no here but that field isn't in this model.
-        # Keeping your original behavior would error if __str__ is called.
-        return f"{self.property_no} in {self.newspaper_name}"
+        placement = self.placement or "Ad"
+        title = self.title or "Untitled"
+        return f"{placement}: {title}"

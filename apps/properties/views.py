@@ -36,6 +36,7 @@ class AdvertisementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Advertisement
         fields = "__all__"
+        read_only_fields = ["assigned_by"]
 
 
 # --- HELPERS ---
@@ -191,12 +192,16 @@ class PropertyInspectionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class AdvertisementListCreateView(generics.ListCreateAPIView):
-    queryset = Advertisement.objects.select_related("property").all()
+    queryset = Advertisement.objects.select_related("property_no", "assigned_by").all()
     serializer_class = AdvertisementSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def perform_create(self, serializer):
+        staff_profile = getattr(self.request.user, "staff_profile", None)
+        serializer.save(assigned_by=staff_profile)
+
 
 class AdvertisementDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Advertisement.objects.select_related("property").all()
+    queryset = Advertisement.objects.select_related("property_no", "assigned_by").all()
     serializer_class = AdvertisementSerializer
     permission_classes = [permissions.IsAuthenticated]
