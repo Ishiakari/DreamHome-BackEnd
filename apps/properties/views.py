@@ -25,6 +25,19 @@ class PropertyViewingSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["renter_no", "decided_by", "decided_at"]
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Nested data for frontend display
+        from .views import PropertyForRentSerializer
+        from apps.users.serializers import ClientSerializer
+        
+        if instance.property_no:
+            representation['property_no'] = PropertyForRentSerializer(instance.property_no).data
+        if instance.renter_no:
+            representation['renter_no'] = ClientSerializer(instance.renter_no).data
+            
+        return representation
+
 
 class PropertyInspectionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,6 +50,15 @@ class AdvertisementSerializer(serializers.ModelSerializer):
         model = Advertisement
         fields = "__all__"
         read_only_fields = ["assigned_by"]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Nested data for frontend display
+        from .views import PropertyForRentSerializer
+        if instance.property_no:
+            representation['property_no'] = PropertyForRentSerializer(instance.property_no).data
+            
+        return representation
 
 
 # --- HELPERS ---
