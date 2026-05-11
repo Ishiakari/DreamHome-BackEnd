@@ -72,13 +72,13 @@ def users_api_root(request):
 # --- STAFF VIEWS ---
 # Admin only: full CRUD on staff
 class StaffListCreateView(generics.ListCreateAPIView):
-    queryset = Staff.objects.select_related("branch", "supervisor").all()
+    queryset = Staff.objects.select_related("branch", "supervisor", "next_of_kin").all()
     serializer_class = StaffSerializer
     permission_classes = [IsAdminRole]          # ✅ Only ADMIN can create/list staff
 
 
 class StaffDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Staff.objects.select_related("branch", "supervisor").all()
+    queryset = Staff.objects.select_related("branch", "supervisor", "next_of_kin").all()
     serializer_class = StaffSerializer
     lookup_field = "staff_no"
     permission_classes = [IsAdminRole]          # ✅ Only ADMIN can edit/delete staff
