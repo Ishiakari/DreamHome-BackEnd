@@ -6,13 +6,56 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import Client, RenterRequirement, Staff, NextOfKin
 
 
+class NextOfKinSerializer(serializers.ModelSerializer):
+    suffix = serializers.CharField(source="suffixes", required=False, allow_blank=True)
+
+    class Meta:
+        model = NextOfKin
+        fields = [
+            "first_name",
+            "last_name",
+            "middle_name",
+            "suffix",
+            "relationship",
+            "address",
+            "telephone_no"
+        ]
+        extra_kwargs = {
+            "first_name": {"required": False, "allow_blank": True},
+            "last_name": {"required": False, "allow_blank": True},
+            "middle_name": {"required": False, "allow_blank": True},
+            "relationship": {"required": False, "allow_blank": True},
+            "address": {"required": False, "allow_blank": True},
+            "telephone_no": {"required": False, "allow_blank": True}
+        }
+
+
 class StaffSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
+    next_of_kin = NextOfKinSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Staff
         fields = "__all__"
         read_only_fields = ["staff_no", "user_no"]
+
+    def _save_next_of_kin(self, staff, next_of_kin_data):
+        if not next_of_kin_data:
+            return
+
+        cleaned = {
+            key: value
+            for key, value in next_of_kin_data.items()
+            if value not in (None, "")
+        }
+
+        if not cleaned:
+            return
+
+        NextOfKin.objects.update_or_create(
+            staff_no=staff,
+            defaults=cleaned
+        )
 
     def validate_email(self, value):
         # If this is an UPDATE and they kept their current email, let it pass.
@@ -24,6 +67,7 @@ class StaffSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        next_of_kin_data = validated_data.pop("next_of_kin", None)
         password = validated_data.pop("password", "dreamhome2026")
         email = validated_data.get("email")
 
@@ -52,9 +96,11 @@ class StaffSerializer(serializers.ModelSerializer):
             user.save()
 
         staff = Staff.objects.create(user_no=user, **validated_data)
+        self._save_next_of_kin(staff, next_of_kin_data)
         return staff
 
     def update(self, instance, validated_data):
+        next_of_kin_data = validated_data.pop("next_of_kin", None)
         password = validated_data.pop("password", None)
 
         instance = super().update(instance, validated_data)
@@ -81,6 +127,8 @@ class StaffSerializer(serializers.ModelSerializer):
 
             if user_needs_save:
                 instance.user_no.save()
+
+        self._save_next_of_kin(instance, next_of_kin_data)
 
         return instance
 
