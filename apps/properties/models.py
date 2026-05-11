@@ -171,6 +171,11 @@ class PropertyViewing(models.Model):
 
 
 class PropertyInspection(models.Model):
+    class InspectionStatus(models.TextChoices):
+        SCHEDULED = "Scheduled", "Scheduled"
+        COMPLETED = "Completed", "Completed"
+        CANCELLED = "Cancelled", "Cancelled"
+
     property_no = models.ForeignKey(
         Property,
         on_delete=models.CASCADE,
@@ -189,6 +194,11 @@ class PropertyInspection(models.Model):
 
     inspection_date = models.DateField()
     comments = models.TextField(blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=InspectionStatus.choices,
+        default=InspectionStatus.SCHEDULED,
+    )
 
     class Meta:
         constraints = [
