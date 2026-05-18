@@ -26,10 +26,11 @@ class PropertyViewingSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["renter_no", "decided_by", "decided_at"]
 
-    def to_representation(self, instance):
+    def to_representation(self, instance):# pyrefly: ignore 
         representation = super().to_representation(instance)
         # Nested data for frontend display
         from .views import PropertyForRentSerializer
+        # pyrefly: ignore [missing-import]
         from apps.users.serializers import ClientSerializer
         
         if instance.property_no:
@@ -203,13 +204,13 @@ class PropertyViewingDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class PropertyInspectionListCreateView(generics.ListCreateAPIView):
-    queryset = PropertyInspection.objects.select_related("property", "staff").all()
+    queryset = PropertyInspection.objects.select_related("property_no", "staff_no").all()
     serializer_class = PropertyInspectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class PropertyInspectionDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = PropertyInspection.objects.select_related("property", "staff").all()
+    queryset = PropertyInspection.objects.select_related("property_no", "staff_no").all()
     serializer_class = PropertyInspectionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
