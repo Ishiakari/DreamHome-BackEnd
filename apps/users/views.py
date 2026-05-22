@@ -142,6 +142,11 @@ class CurrentUserView(APIView):
                 "telephoneNo": client.telephone_no,
                 "address": client.address,
             })
+            
+            # Include Renter Requirements if they exist
+            if client.role == Client.Role.RENTER and hasattr(client, 'renter_requirements'):
+                from .serializers import RenterRequirementSerializer
+                data["renter_requirements"] = RenterRequirementSerializer(client.renter_requirements).data
 
         elif hasattr(user, "staff_profile"):
             staff = user.staff_profile

@@ -141,7 +141,7 @@ class RenterRequirementSerializer(serializers.ModelSerializer):
 
 class ClientSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False)
-    renter_requirements = RenterRequirementSerializer(read_only=True)
+    renter_requirements = RenterRequirementSerializer(required=False, allow_null=True)
 
     class Meta:
         model = Client
@@ -212,12 +212,20 @@ class ClientSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
+        req_data = validated_data.pop("renter_requirements", None)
 
         # Normalize role on update too (optional but keeps data consistent)
         if "role" in validated_data:
             validated_data["role"] = self.validate_role(validated_data["role"])
 
         instance = super().update(instance, validated_data)
+
+        # Sync Renter Requirements
+        if req_data is not None and instance.role == Client.Role.RENTER:
+            RenterRequirement.objects.update_or_create(
+                client_no=instance,
+                defaults=req_data
+            )
 
         # Sync with Django auth User
         if instance.user_no:
