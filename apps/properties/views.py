@@ -24,7 +24,7 @@ class PropertyViewingSerializer(serializers.ModelSerializer):
     class Meta:
         model = PropertyViewing
         fields = "__all__"
-        read_only_fields = ["renter_no", "decided_by", "decided_at"]
+        read_only_fields = ["decided_by", "decided_at"]
 
     def to_representation(self, instance):# pyrefly: ignore 
         representation = super().to_representation(instance)
@@ -134,7 +134,18 @@ class PropertyViewingListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        client_profile = get_client_profile_or_error(self.request.user)
+        user = self.request.user
+        
+        if is_staff_user(user):
+            # Staff can schedule viewings on behalf of a renter
+            # The renter_no is read from the POST payload by the serializer
+            if "renter_no" not in serializer.validated_data:
+                raise serializers.ValidationError({"renter_no": "This field is required when staff schedules a viewing."})
+            serializer.save(status=PropertyViewing.ViewingStatus.REQUESTED)
+            return
+
+        # Regular renters can only schedule for themselves
+        client_profile = get_client_profile_or_error(user)
         if getattr(client_profile, "role", None) != "Renter":
             raise serializers.ValidationError({"detail": "Only renters can request viewings."})
 
