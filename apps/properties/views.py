@@ -86,10 +86,18 @@ def is_staff_user(user):
 class PropertyForRentListCreateView(generics.ListCreateAPIView):
     """
     Public READ (GET), authenticated WRITE (POST).
+    Supports ?status=Available (or any status) to filter the queryset.
+    Used by the Lease form to show only Available properties when creating a lease.
     """
-    queryset = Property.objects.select_related("owner_no", "staff_no", "branch_no").all()
     serializer_class = PropertyForRentSerializer
     permission_classes = [ReadOnlyOrAuthenticated]  # ✅ changed
+
+    def get_queryset(self):
+        queryset = Property.objects.select_related("owner_no", "staff_no", "branch_no").all()
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        return queryset
 
     def perform_create(self, serializer):
         # Allow admin/staff to specify owner_no, otherwise fall back to current client profile.
