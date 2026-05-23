@@ -105,14 +105,21 @@ class LeaseAgreement(models.Model):
     def update_deposit_status(self):
         if not self.pk:
             return
-        total_completed = self.payments.filter(status='Completed').aggregate(
-            total=models.Sum('amount_paid')
-        )['total'] or 0
-        
-        is_paid = total_completed >= self.deposit
-        if self.deposit_paid != is_paid:
-            self.deposit_paid = is_paid
-            self.save(update_fields=['deposit_paid'])
+            
+        from django.db import transaction
+        with transaction.atomic():
+            # Lock the lease for update to ensure concurrency safety
+            lease = LeaseAgreement.objects.select_for_update().get(pk=self.pk)
+            total_completed = lease.payments.filter(status='Completed').aggregate(
+                total=models.Sum('amount_paid')
+            )['total'] or 0
+            
+            is_paid = total_completed >= lease.deposit
+            if lease.deposit_paid != is_paid:
+                lease.deposit_paid = is_paid
+                lease.save(update_fields=['deposit_paid'])
+                # Also update the in-memory instance to reflect the DB change
+                self.deposit_paid = is_paid
 
     def __str__(self):
         return f"Lease {self.lease_no} for {self.property_no.property_no}"
