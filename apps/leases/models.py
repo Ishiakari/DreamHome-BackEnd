@@ -61,6 +61,13 @@ class LeaseAgreement(models.Model):
         # 🌟 AUTOMATION: When a new lease is created, update the property status
         is_new = self.pk is None
         
+        # Calculate deposit status based on existing payments (only if not a new lease)
+        if not is_new and (not kwargs.get('update_fields') or 'deposit_paid' not in kwargs.get('update_fields')):
+            total_completed = self.payments.filter(status='Completed').aggregate(
+                total=models.Sum('amount_paid')
+            )['total'] or 0
+            self.deposit_paid = total_completed >= self.deposit
+            
         super().save(*args, **kwargs) # Save the lease first
         
         if is_new and self.property_no:
@@ -68,5 +75,17 @@ class LeaseAgreement(models.Model):
             self.property_no.status = 'Rented' 
             self.property_no.save()
 
+    def update_deposit_status(self):
+        if not self.pk:
+            return
+        total_completed = self.payments.filter(status='Completed').aggregate(
+            total=models.Sum('amount_paid')
+        )['total'] or 0
+        
+        is_paid = total_completed >= self.deposit
+        if self.deposit_paid != is_paid:
+            self.deposit_paid = is_paid
+            self.save(update_fields=['deposit_paid'])
+
     def __str__(self):
-        return f"Lease {self.lease_no} for {self.property.property_no}"
+        return f"Lease {self.lease_no} for {self.property_no.property_no}"

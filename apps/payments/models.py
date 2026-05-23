@@ -73,6 +73,14 @@ class Payment(models.Model):
             self.payment_no = f"PAY-{new_id:03d}"
         
         super().save(*args, **kwargs)
+        if self.lease:
+            self.lease.update_deposit_status()
+
+    def delete(self, *args, **kwargs):
+        lease = self.lease
+        super().delete(*args, **kwargs)
+        if lease:
+            lease.update_deposit_status()
 
     def __str__(self):
         # self.lease_id fetches the 'lease_no' string without making an extra database query
