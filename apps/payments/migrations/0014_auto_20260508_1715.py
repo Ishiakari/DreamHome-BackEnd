@@ -36,8 +36,8 @@ operations = [
                 v_start  DATE;
                 v_finish DATE;
             BEGIN
-                -- 1) Amount must be positive
-                IF NEW.amount_paid IS NULL OR NEW.amount_paid <= 0 THEN
+                -- 1) Amount must be positive EXCEPT for Late Fee Penalties
+                IF NEW.payment_method != 'Late Fee Penalty' AND (NEW.amount_paid IS NULL OR NEW.amount_paid <= 0) THEN
                     RAISE EXCEPTION 'Payment amount must be greater than 0.';
                 END IF;
 

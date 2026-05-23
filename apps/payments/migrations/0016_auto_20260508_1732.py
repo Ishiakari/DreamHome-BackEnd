@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
     sql="""
     CREATE OR REPLACE PROCEDURE transfer_payment_correction(
-        p_payment_id INT, 
+        p_payment_id VARCHAR, 
         p_wrong_lease VARCHAR, 
         p_correct_lease VARCHAR,
         p_staff_id VARCHAR
@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
         UPDATE payment
         SET lease_no = p_correct_lease,
             payment_method = 'Correction Transfer',
-            staff_no_id = p_staff_id
+            processed_by_staff_no = p_staff_id
         WHERE payment_no = p_payment_id -- Ensure this matches your PK column name
             AND lease_no = p_wrong_lease;
 
@@ -43,6 +43,6 @@ class Migration(migrations.Migration):
     END;
     $$;
     """,
-    reverse_sql="DROP PROCEDURE IF EXISTS transfer_payment_correction(INT, VARCHAR, VARCHAR, VARCHAR);"
+    reverse_sql="DROP PROCEDURE IF EXISTS transfer_payment_correction(VARCHAR, VARCHAR, VARCHAR, VARCHAR);"
 )
     ]

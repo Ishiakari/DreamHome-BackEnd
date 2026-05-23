@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                     lease_no,
                     amount_paid,
                     payment_method,
-                    staff_no_id,
+                    processed_by_staff_no,
                     payment_date
                 )
                 VALUES (
