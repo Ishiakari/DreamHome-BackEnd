@@ -45,6 +45,34 @@ class LeaseAgreementSerializer(serializers.ModelSerializer):
             
         return representation
 
+    def validate(self, data):
+        # Enforce that a lease can only be created if there is an accepted PropertyViewing
+        # for this specific property and renter.
+        property_obj = data.get('property_no', getattr(self.instance, 'property_no', None))
+        renter_obj = data.get('renter_no', getattr(self.instance, 'renter_no', None))
+
+        # Check if it's a new lease or if the property/renter is being changed
+        is_new = self.instance is None
+        property_changed = is_new or ('property_no' in data and getattr(self.instance, 'property_no', None) != property_obj)
+        renter_changed = is_new or ('renter_no' in data and getattr(self.instance, 'renter_no', None) != renter_obj)
+
+        if (property_changed or renter_changed) and property_obj and renter_obj:
+            from apps.properties.models import PropertyViewing
+            
+            # Check if there's any approved viewing for this renter and property
+            has_approved_viewing = PropertyViewing.objects.filter(
+                property_no=property_obj,
+                renter_no=renter_obj,
+                status='Approved'
+            ).exists()
+            
+            if not has_approved_viewing:
+                raise serializers.ValidationError(
+                    "Cannot create or update this lease: The renter must have an 'Approved' property viewing for this property."
+                )
+
+        return data
+
 
 class LeaseAgreementListCreateView(generics.ListCreateAPIView):
     queryset = LeaseAgreement.objects.select_related("renter_no", "property_no", "staff_no").all()

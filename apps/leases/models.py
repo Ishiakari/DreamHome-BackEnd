@@ -57,6 +57,33 @@ class LeaseAgreement(models.Model):
             if self.rent_start >= self.rent_finish:
                 raise ValidationError("The rent finish date must be after the rent start date.")
 
+        # 🌟 LOGIC CHECK: Ensure renter has an approved viewing for the property
+        if hasattr(self, 'property_no_id') and hasattr(self, 'renter_no_id') and self.property_no_id and self.renter_no_id:
+            is_new = self.pk is None
+            property_changed = True
+            renter_changed = True
+            
+            if not is_new:
+                # Check if property or renter actually changed
+                try:
+                    original = LeaseAgreement.objects.get(pk=self.pk)
+                    property_changed = original.property_no_id != self.property_no_id
+                    renter_changed = original.renter_no_id != self.renter_no_id
+                except LeaseAgreement.DoesNotExist:
+                    pass
+
+            if is_new or property_changed or renter_changed:
+                from apps.properties.models import PropertyViewing
+                has_approved = PropertyViewing.objects.filter(
+                    property_no_id=self.property_no_id,
+                    renter_no_id=self.renter_no_id,
+                    status='Approved'
+                ).exists()
+                if not has_approved:
+                    raise ValidationError(
+                        "Cannot assign this lease: The renter must have an 'Approved' property viewing for this property."
+                    )
+
     def save(self, *args, **kwargs):
         # 🌟 AUTOMATION: When a new lease is created, update the property status
         is_new = self.pk is None
