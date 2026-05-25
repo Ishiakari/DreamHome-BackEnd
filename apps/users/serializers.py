@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+from django.db import transaction
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -62,8 +63,19 @@ class StaffSerializer(serializers.ModelSerializer):
         if self.instance and self.instance.email == value:
             return value
 
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("An account with this email address already exists.")
+        existing_user = User.objects.filter(username__iexact=value).first()
+        if not existing_user:
+            return value
+
+        if Staff.objects.filter(user_no=existing_user).exists():
+            raise serializers.ValidationError("A staff account with this email address already exists.")
+
+        if Client.objects.filter(user_no=existing_user).exists():
+            raise serializers.ValidationError(
+                "This email address is already used by a client account. Use a different email for staff."
+            )
+
+        # Orphaned User (no Staff/Client profile) — allow reuse.
         return value
 
     def create(self, validated_data):
@@ -86,21 +98,41 @@ class StaffSerializer(serializers.ModelSerializer):
 
         validated_data["staff_no"] = f"S{new_seq:03d}"
 
-        user = None
-        if email:
-            user = User.objects.create_user(
-                username=email,
-                email=email,
-                password=password,
-                first_name=validated_data.get("first_name", ""),
-                last_name=validated_data.get("last_name", ""),
-            )
-            user.is_staff = True
-            user.save()
+        with transaction.atomic():
+            user = None
+            if email:
+                existing_user = User.objects.filter(username__iexact=email).first()
+                if existing_user:
+                    # Safety net (validate_email should already have blocked these)
+                    if Staff.objects.filter(user_no=existing_user).exists():
+                        raise serializers.ValidationError({"email": "A staff account with this email address already exists."})
+                    if Client.objects.filter(user_no=existing_user).exists():
+                        raise serializers.ValidationError({
+                            "email": "This email address is already used by a client account. Use a different email for staff."
+                        })
 
-        staff = Staff.objects.create(user_no=user, **validated_data)
-        self._save_next_of_kin(staff, next_of_kin_data)
-        return staff
+                    user = existing_user
+                    user.username = email
+                    user.email = email
+                    user.first_name = validated_data.get("first_name", user.first_name)
+                    user.last_name = validated_data.get("last_name", user.last_name)
+                    user.set_password(password)
+                    user.is_staff = True
+                    user.save()
+                else:
+                    user = User.objects.create_user(
+                        username=email,
+                        email=email,
+                        password=password,
+                        first_name=validated_data.get("first_name", ""),
+                        last_name=validated_data.get("last_name", ""),
+                    )
+                    user.is_staff = True
+                    user.save()
+
+            staff = Staff.objects.create(user_no=user, **validated_data)
+            self._save_next_of_kin(staff, next_of_kin_data)
+            return staff
 
     def update(self, instance, validated_data):
         next_of_kin_data = validated_data.pop("next_of_kin", None)
