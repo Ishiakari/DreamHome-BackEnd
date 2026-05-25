@@ -97,17 +97,30 @@ class PropertyForRentListCreateView(generics.ListCreateAPIView):
         status_filter = self.request.query_params.get("status")
         if status_filter:
             queryset = queryset.filter(status=status_filter)
+
+        # Public users (unauthenticated) and non-staff should never see 'Pending Approval' or 'Rejected'
+        user = self.request.user
+        if not user or not user.is_authenticated or not is_staff_user(user):
+            queryset = queryset.exclude(status__in=["Pending Approval", "Rejected"])
+
         return queryset
 
     def perform_create(self, serializer):
-        # Allow admin/staff to specify owner_no, otherwise fall back to current client profile.
-        owner = serializer.validated_data.get("owner_no")
-        if owner:
-            serializer.save()
+        user = self.request.user
+
+        # Staff/admin can specify owner_no and any status they want
+        if is_staff_user(user):
+            owner = serializer.validated_data.get("owner_no")
+            if owner:
+                serializer.save()
+                return
+            client_profile = get_client_profile_or_error(user)
+            serializer.save(owner_no=client_profile)
             return
 
-        client_profile = get_client_profile_or_error(self.request.user)
-        serializer.save(owner_no=client_profile)
+        # Regular owners: always start as 'Pending Approval'
+        client_profile = get_client_profile_or_error(user)
+        serializer.save(owner_no=client_profile, status="Pending Approval")
 
 
 class MyPropertyForRentListView(generics.ListAPIView):

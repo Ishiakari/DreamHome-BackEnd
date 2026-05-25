@@ -20,6 +20,8 @@ class Property(models.Model):
         HOUSE = "House", "House"
 
     class PropertyStatus(models.TextChoices):
+        PENDING = "Pending Approval", "Pending Approval"
+        REJECTED = "Rejected", "Rejected"
         AVAILABLE = "Available", "Available"
         RENTED = "Rented", "Rented"
         WITHDRAWN = "Withdrawn", "Withdrawn"
@@ -46,7 +48,7 @@ class Property(models.Model):
     status = models.CharField(
         max_length=50,
         choices=PropertyStatus.choices,
-        default=PropertyStatus.AVAILABLE,
+        default=PropertyStatus.PENDING,
     )
 
     # Relationships
