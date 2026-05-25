@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import Client, RenterRequirement, Staff, NextOfKin
+from .models import Client, RenterRequirement, Staff, NextOfKin, HiringApplication
 
 
 class NextOfKinSerializer(serializers.ModelSerializer):
@@ -134,6 +134,13 @@ class StaffSerializer(serializers.ModelSerializer):
         self._save_next_of_kin(instance, next_of_kin_data)
 
         return instance
+
+
+class HiringApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HiringApplication
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class RenterRequirementSerializer(serializers.ModelSerializer):
