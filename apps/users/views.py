@@ -78,18 +78,46 @@ def users_api_root(request):
 
 
 # --- STAFF VIEWS ---
-# Admin only: full CRUD on staff
+# Admin only: full CRUD on staff. Managers/Supervisors/Staff: read branch-scoped staff.
 class StaffListCreateView(generics.ListCreateAPIView):
-    queryset = Staff.objects.select_related("branch", "supervisor", "next_of_kin").all()
     serializer_class = StaffSerializer
-    permission_classes = [IsAdminRole]          # ✅ Only ADMIN can create/list staff
+
+    def get_queryset(self):
+        qs = Staff.objects.select_related("branch", "supervisor", "next_of_kin").all()
+        user = self.request.user
+        if not user.is_authenticated:
+            return qs.none()
+        if user.is_superuser:
+            return qs
+        if hasattr(user, 'staff_profile') and user.staff_profile.branch:
+            return qs.filter(branch=user.staff_profile.branch)
+        return qs.none()
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [IsStaffOrAdmin()]
+        return [IsAdminRole()]
 
 
 class StaffDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Staff.objects.select_related("branch", "supervisor", "next_of_kin").all()
     serializer_class = StaffSerializer
     lookup_field = "staff_no"
-    permission_classes = [IsAdminRole]          # ✅ Only ADMIN can edit/delete staff
+
+    def get_queryset(self):
+        qs = Staff.objects.select_related("branch", "supervisor", "next_of_kin").all()
+        user = self.request.user
+        if not user.is_authenticated:
+            return qs.none()
+        if user.is_superuser:
+            return qs
+        if hasattr(user, 'staff_profile') and user.staff_profile.branch:
+            return qs.filter(branch=user.staff_profile.branch)
+        return qs.none()
+
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [IsStaffOrAdmin()]
+        return [IsAdminRole()]
 
     def destroy(self, request, *args, **kwargs):
         try:
