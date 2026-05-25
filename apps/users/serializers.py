@@ -140,6 +140,26 @@ class HiringApplicationSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
 
+class HiringApplicationPublicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HiringApplication
+        fields = [
+            "id",
+            "first_name",
+            "last_name",
+            "position",
+            "branch",
+            "stage",
+            "preferred_start_date",
+            "interview_date",
+            "offer_date",
+            "hired_date",
+            "rejected_reason",
+            "created_at",
+            "updated_at",
+        ]
+
+
 class RenterRequirementSerializer(serializers.ModelSerializer):
     class Meta:
         model = RenterRequirement
