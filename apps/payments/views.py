@@ -12,13 +12,17 @@ class PaymentSerializer(serializers.ModelSerializer):
         read_only_fields = ["payment_no", "status", "processed_by_staff"]
 
     def create(self, validated_data):
+        import re
         existing_ids = Payment.objects.filter(payment_no__startswith="PAY").values_list("payment_no", flat=True)
         max_seq = 0
         for pid in existing_ids:
             try:
-                num = int(pid[3:])
-                if num > max_seq:
-                    max_seq = num
+                # Extract all digits from the string (e.g. 'PAY-001' -> '001', 'PAY002' -> '002')
+                num_str = re.sub(r'\D', '', pid)
+                if num_str:
+                    num = int(num_str)
+                    if num > max_seq:
+                        max_seq = num
             except ValueError:
                 pass
         
