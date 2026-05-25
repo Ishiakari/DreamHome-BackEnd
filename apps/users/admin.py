@@ -5,16 +5,18 @@ from .models import Client, Staff  # Import your models here
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     # This controls the columns you see in the list
-    list_display = ('client_no', 'first_name', 'last_name', 'email', 'role')
+    list_display = ('client_no', 'first_name', 'last_name', 'email', 'role', 'registered_branch')
     
     # This adds a search bar to find users quickly
     search_fields = ('client_no', 'email', 'last_name')
+    list_filter = ('role', 'registered_branch')
 
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
     # Change 'role' to 'position' (or whatever you named it in models.py)
-    list_display = ('staff_no', 'first_name', 'last_name', 'position') 
+    list_display = ('staff_no', 'first_name', 'last_name', 'position', 'branch') 
     search_fields = ('staff_no', 'last_name')
+    list_filter = ('position', 'branch')
 
 # Register your models here.
 '''
