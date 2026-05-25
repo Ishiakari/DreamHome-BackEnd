@@ -11,6 +11,20 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["payment_no", "status", "processed_by_staff"]
 
+    def create(self, validated_data):
+        existing_ids = Payment.objects.filter(payment_no__startswith="PAY").values_list("payment_no", flat=True)
+        max_seq = 0
+        for pid in existing_ids:
+            try:
+                num = int(pid[3:])
+                if num > max_seq:
+                    max_seq = num
+            except ValueError:
+                pass
+        
+        validated_data["payment_no"] = f"PAY{max_seq + 1:03d}"
+        return super().create(validated_data)
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         

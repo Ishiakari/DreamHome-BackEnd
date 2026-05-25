@@ -72,14 +72,17 @@ class StaffSerializer(serializers.ModelSerializer):
         email = validated_data.get("email")
 
         # Auto-generate staff_no
-        last_staff = Staff.objects.order_by("-staff_no").first()
-        if last_staff and last_staff.staff_no and last_staff.staff_no.startswith("S"):
+        existing_ids = Staff.objects.filter(staff_no__startswith="S").values_list("staff_no", flat=True)
+        max_seq = 0
+        for sid in existing_ids:
             try:
-                new_seq = int(last_staff.staff_no[1:]) + 1
+                num = int(sid[1:])
+                if num > max_seq:
+                    max_seq = num
             except ValueError:
-                new_seq = 1
-        else:
-            new_seq = 1
+                pass
+        
+        new_seq = max_seq + 1
 
         validated_data["staff_no"] = f"S{new_seq:03d}"
 
@@ -179,19 +182,17 @@ class ClientSerializer(serializers.ModelSerializer):
         # Generate client_no: CR### (Renter) or CO### (Owner)
         prefix = "CO" if validated_data["role"] == Client.Role.OWNER else "CR"
 
-        last_client = (
-            Client.objects.filter(client_no__startswith=prefix)
-            .order_by("-client_no")
-            .first()
-        )
-
-        if last_client and last_client.client_no and last_client.client_no.startswith(prefix):
+        existing_ids = Client.objects.filter(client_no__startswith=prefix).values_list("client_no", flat=True)
+        max_seq = 0
+        for cid in existing_ids:
             try:
-                new_seq = int(last_client.client_no[len(prefix):]) + 1
+                num = int(cid[len(prefix):])
+                if num > max_seq:
+                    max_seq = num
             except ValueError:
-                new_seq = 1
-        else:
-            new_seq = 1
+                pass
+        
+        new_seq = max_seq + 1
 
         validated_data["client_no"] = f"{prefix}{new_seq:03d}"
 

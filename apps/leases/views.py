@@ -32,6 +32,20 @@ class LeaseAgreementSerializer(serializers.ModelSerializer):
         model = LeaseAgreement
         fields = "__all__"
 
+    def create(self, validated_data):
+        existing_ids = LeaseAgreement.objects.filter(lease_no__startswith="L").values_list("lease_no", flat=True)
+        max_seq = 0
+        for lid in existing_ids:
+            try:
+                num = int(lid[1:])
+                if num > max_seq:
+                    max_seq = num
+            except ValueError:
+                pass
+        
+        validated_data["lease_no"] = f"L{max_seq + 1:03d}"
+        return super().create(validated_data)
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         
