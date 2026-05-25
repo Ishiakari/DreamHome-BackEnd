@@ -5,8 +5,8 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, BasePermission, AllowAny
 
 from django.db.models.deletion import ProtectedError
-from .models import Client, Staff
-from .serializers import ClientSerializer, StaffSerializer, MyTokenObtainPairSerializer
+from .models import Client, Staff, HiringApplication
+from .serializers import ClientSerializer, StaffSerializer, HiringApplicationSerializer, MyTokenObtainPairSerializer
 
 
 # ============================================================
@@ -68,6 +68,7 @@ def users_api_root(request):
         "staff": "/api/users/staff/",
         "clients": "/api/users/clients/",
         "signup": "/api/users/signup/",
+        "hiring_applications": "/api/users/hiring-applications/",
     })
 
 
@@ -138,6 +139,42 @@ class PublicClientSignupView(generics.CreateAPIView):
     def perform_create(self, serializer):
         # Prevent public signups from assigning internal registration fields.
         serializer.save(registered_branch=None, registered_staff=None)
+
+
+# --- HIRING APPLICATIONS ---
+class HiringApplicationListCreateView(generics.ListCreateAPIView):
+    queryset = HiringApplication.objects.select_related(
+        "branch",
+        "assigned_manager",
+        "reviewed_by"
+    ).all()
+    serializer_class = HiringApplicationSerializer
+
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [AllowAny()]
+        return [IsStaffOrAdmin()]
+
+    def perform_create(self, serializer):
+        # Public submissions must start at Applied with no internal assignments.
+        if not self.request.user.is_authenticated:
+            serializer.save(
+                stage=HiringApplication.Stage.APPLIED,
+                assigned_manager=None,
+                reviewed_by=None
+            )
+            return
+        serializer.save()
+
+
+class HiringApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = HiringApplication.objects.select_related(
+        "branch",
+        "assigned_manager",
+        "reviewed_by"
+    ).all()
+    serializer_class = HiringApplicationSerializer
+    permission_classes = [ReadOnlyOrManagerAdmin]
 
 
 # --- CURRENT USER (PROFILE) ---
