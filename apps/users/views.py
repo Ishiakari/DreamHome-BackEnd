@@ -1,12 +1,14 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, BasePermission, AllowAny
 
+from datetime import date
+from django.db import transaction
 from django.db.models.deletion import ProtectedError
 from .models import Client, Staff, HiringApplication
-from .serializers import ClientSerializer, StaffSerializer, HiringApplicationSerializer, MyTokenObtainPairSerializer
+from .serializers import ClientSerializer, StaffSerializer, HiringApplicationSerializer, HiringApplicationPublicSerializer, MyTokenObtainPairSerializer
 
 
 # ============================================================
@@ -69,6 +71,7 @@ def users_api_root(request):
         "clients": "/api/users/clients/",
         "signup": "/api/users/signup/",
         "hiring_applications": "/api/users/hiring-applications/",
+        "hiring_tracking": "/api/users/hiring-applications/track/",
     })
 
 
@@ -175,6 +178,100 @@ class HiringApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
     ).all()
     serializer_class = HiringApplicationSerializer
     permission_classes = [ReadOnlyOrManagerAdmin]
+
+    def _build_next_of_kin(self, application):
+        payload = {
+            "first_name": application.nok_first_name,
+            "last_name": application.nok_last_name,
+            "middle_name": application.nok_middle_name,
+            "suffix": application.nok_suffixes,
+            "relationship": application.nok_relationship,
+            "address": application.nok_address,
+            "telephone_no": application.nok_telephone_no,
+        }
+        cleaned = {key: value for key, value in payload.items() if value not in (None, "")}
+        return cleaned or None
+
+    def _create_staff_from_application(self, application):
+        if Staff.objects.filter(email=application.email).exists():
+            return
+
+        next_of_kin = self._build_next_of_kin(application)
+
+        staff_payload = {
+            "email": application.email,
+            "first_name": application.first_name,
+            "last_name": application.last_name,
+            "middle_name": application.middle_name,
+            "suffixes": application.suffixes,
+            "address": application.address,
+            "telephone_no": application.telephone_no,
+            "sex": application.sex,
+            "dob": application.dob,
+            "nin": application.nin,
+            "position": application.position,
+            "salary": 0,
+            "date_joined": application.preferred_start_date,
+            "branch": application.branch.branch_no,
+            "typing_speed": application.typing_speed if application.position == Staff.Position.SECRETARY else None,
+            "manager_start_date": application.preferred_start_date if application.position == Staff.Position.MANAGER else None,
+            "bonus_payment": None,
+            "car_allowance": None,
+            "supervisor": None,
+        }
+
+        if next_of_kin:
+            staff_payload["next_of_kin"] = next_of_kin
+
+        serializer = StaffSerializer(data=staff_payload)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(password="Dreamhome101")
+
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        previous_stage = instance.stage
+
+        with transaction.atomic():
+            updated = serializer.save()
+
+            staff_profile = getattr(self.request.user, "staff_profile", None)
+            if staff_profile and not updated.reviewed_by:
+                updated.reviewed_by = staff_profile
+                updated.save(update_fields=["reviewed_by"])
+
+            if previous_stage != HiringApplication.Stage.HIRED and updated.stage == HiringApplication.Stage.HIRED:
+                if not updated.hired_date:
+                    updated.hired_date = date.today()
+                    updated.save(update_fields=["hired_date"])
+
+                try:
+                    self._create_staff_from_application(updated)
+                except serializers.ValidationError as error:
+                    raise serializers.ValidationError(error.detail)
+
+
+class PublicHiringTrackingView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+        nin = request.data.get("nin")
+        dob = request.data.get("dob")
+
+        if not email or not nin or not dob:
+            return Response(
+                {"detail": "Email, National Insurance Number, and Date of Birth are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        applications = HiringApplication.objects.filter(
+            email__iexact=email,
+            nin=nin,
+            dob=dob
+        ).order_by("-created_at")
+
+        serializer = HiringApplicationPublicSerializer(applications, many=True)
+        return Response(serializer.data)
 
 
 # --- CURRENT USER (PROFILE) ---
