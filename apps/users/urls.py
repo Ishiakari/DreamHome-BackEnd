@@ -22,4 +22,5 @@ urlpatterns = [
     # Hiring Applications
     path("hiring-applications/", views.HiringApplicationListCreateView.as_view(), name="hiring-application-list-create"),
     path("hiring-applications/<int:pk>/", views.HiringApplicationDetailView.as_view(), name="hiring-application-detail"),
+    path("hiring-applications/track/", views.PublicHiringTrackingView.as_view(), name="hiring-application-track"),
 ]
