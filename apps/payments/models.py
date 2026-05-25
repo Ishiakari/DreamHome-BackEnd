@@ -7,12 +7,14 @@ class Payment(models.Model):
         CARD = 'Card', 'Credit/Debit Card'
         TRANSFER = 'Transfer', 'Bank Transfer'
         CHECK = 'Check', 'Check'
+        PENALTY = 'Late Fee Penalty', 'Late Fee Penalty'
 
     class PaymentStatus(models.TextChoices):
         PENDING = 'Pending', 'Pending'
         COMPLETED = 'Completed', 'Completed'
         FAILED = 'Failed', 'Failed'
         REFUNDED = 'Refunded', 'Refunded'
+        PENALTY = 'Penalty', 'Late Fee Penalty'
 
     payment_no = models.CharField(
         max_length=20, 
@@ -54,12 +56,27 @@ class Payment(models.Model):
         related_name='processed_payments',
         db_column='processed_by_staff_no'
     )
-
+ 
     class Meta:
         db_table = 'payment' 
         ordering = ['-payment_date'] 
-
+ 
     def save(self, *args, **kwargs):
+        if not self.payment_no:
+            import re
+            existing_ids = Payment.objects.filter(payment_no__startswith="PAY").values_list("payment_no", flat=True)
+            max_seq = 0
+            for pid in existing_ids:
+                try:
+                    num_str = re.sub(r'\D', '', pid)
+                    if num_str:
+                        num = int(num_str)
+                        if num > max_seq:
+                            max_seq = num
+                except ValueError:
+                    pass
+            self.payment_no = f"PAY{max_seq + 1:03d}"
+
         super().save(*args, **kwargs)
         if self.lease:
             self.lease.update_deposit_status()
