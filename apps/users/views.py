@@ -7,6 +7,8 @@ from rest_framework.permissions import IsAuthenticated, BasePermission, AllowAny
 from datetime import date
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
+from decimal import Decimal, InvalidOperation
+
 from .models import Client, Staff, HiringApplication
 from .serializers import ClientSerializer, StaffSerializer, HiringApplicationSerializer, HiringApplicationPublicSerializer, MyTokenObtainPairSerializer
 
@@ -192,6 +194,26 @@ class HiringApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
         cleaned = {key: value for key, value in payload.items() if value not in (None, "")}
         return cleaned or None
 
+    def _resolve_salary(self, application):
+        min_salaries = {
+            Staff.Position.MANAGER: Decimal("30000"),
+            Staff.Position.SUPERVISOR: Decimal("22000"),
+            Staff.Position.SECRETARY: Decimal("15000"),
+            Staff.Position.STAFF: Decimal("12000"),
+        }
+
+        min_salary = min_salaries.get(application.position, Decimal("0"))
+        raw_salary = getattr(application, "salary", None)
+        if raw_salary in (None, ""):
+            return min_salary
+
+        try:
+            requested = Decimal(str(raw_salary))
+        except (InvalidOperation, TypeError):
+            requested = Decimal("0")
+
+        return requested if requested >= min_salary else min_salary
+
     def _create_staff_from_application(self, application):
         if Staff.objects.filter(email=application.email).exists():
             return
@@ -210,7 +232,7 @@ class HiringApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
             "dob": application.dob,
             "nin": application.nin,
             "position": application.position,
-            "salary": 30000 if application.position == Staff.Position.MANAGER else 0,
+            "salary": self._resolve_salary(application),
             "date_joined": application.preferred_start_date,
             "branch": application.branch.branch_no,
             "typing_speed": application.typing_speed if application.position == Staff.Position.SECRETARY else None,
