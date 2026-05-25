@@ -170,6 +170,7 @@ class HiringApplication(models.Model):
         choices=Staff.Position.choices,
         help_text="Role being applied for."
     )
+    salary = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     branch = models.ForeignKey('branches.Branch', on_delete=models.PROTECT, related_name='hiring_applications')
     preferred_start_date = models.DateField()
     typing_speed = models.IntegerField(
