@@ -17,7 +17,7 @@ operations = [
             AS $$
             BEGIN
                 -- Insert a penalty record for leases that are behind on payments
-                INSERT INTO payment (lease_no, amount_paid, payment_method, payment_date, status, staff_no_id)
+                INSERT INTO payment (lease_no, amount_paid, payment_method, payment_date, status, processed_by_staff_no)
                 SELECT 
                     l.lease_no, 
                     (p_fee * -1), -- Negative amount increases the 'outstanding balance'

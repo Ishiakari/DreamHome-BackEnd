@@ -18,6 +18,7 @@ class Payment(models.Model):
         max_length=20, 
         primary_key=True, 
         editable=False,
+        blank=True,
         help_text="Unique payment identifier."
     )
     
@@ -59,20 +60,15 @@ class Payment(models.Model):
         ordering = ['-payment_date'] 
 
     def save(self, *args, **kwargs):
-        if not self.payment_no:
-            # Simple sequence: PAY-001, PAY-002, etc.
-            last_payment = Payment.objects.all().order_by("-payment_no").first()
-            if last_payment and last_payment.payment_no.startswith("PAY-"):
-                try:
-                    last_id = int(last_payment.payment_no.split("-")[1])
-                    new_id = last_id + 1
-                except (IndexError, ValueError):
-                    new_id = 1
-            else:
-                new_id = 1
-            self.payment_no = f"PAY-{new_id:03d}"
-        
         super().save(*args, **kwargs)
+        if self.lease:
+            self.lease.update_deposit_status()
+
+    def delete(self, *args, **kwargs):
+        lease = self.lease
+        super().delete(*args, **kwargs)
+        if lease:
+            lease.update_deposit_status()
 
     def __str__(self):
         # self.lease_id fetches the 'lease_no' string without making an extra database query

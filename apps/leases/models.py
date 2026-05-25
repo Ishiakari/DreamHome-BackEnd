@@ -57,10 +57,44 @@ class LeaseAgreement(models.Model):
             if self.rent_start >= self.rent_finish:
                 raise ValidationError("The rent finish date must be after the rent start date.")
 
+        # 🌟 LOGIC CHECK: Ensure renter has an approved viewing for the property
+        if hasattr(self, 'property_no_id') and hasattr(self, 'renter_no_id') and self.property_no_id and self.renter_no_id:
+            is_new = self.pk is None
+            property_changed = True
+            renter_changed = True
+            
+            if not is_new:
+                # Check if property or renter actually changed
+                try:
+                    original = LeaseAgreement.objects.get(pk=self.pk)
+                    property_changed = original.property_no_id != self.property_no_id
+                    renter_changed = original.renter_no_id != self.renter_no_id
+                except LeaseAgreement.DoesNotExist:
+                    pass
+
+            if is_new or property_changed or renter_changed:
+                from apps.properties.models import PropertyViewing
+                has_approved = PropertyViewing.objects.filter(
+                    property_no_id=self.property_no_id,
+                    renter_no_id=self.renter_no_id,
+                    status='Approved'
+                ).exists()
+                if not has_approved:
+                    raise ValidationError(
+                        "Cannot assign this lease: The renter must have an 'Approved' property viewing for this property."
+                    )
+
     def save(self, *args, **kwargs):
         # 🌟 AUTOMATION: When a new lease is created, update the property status
         is_new = self.pk is None
         
+        # Calculate deposit status based on existing payments (only if not a new lease)
+        if not is_new and (not kwargs.get('update_fields') or 'deposit_paid' not in kwargs.get('update_fields')):
+            total_completed = self.payments.filter(status='Completed').aggregate(
+                total=models.Sum('amount_paid')
+            )['total'] or 0
+            self.deposit_paid = total_completed >= self.deposit
+            
         super().save(*args, **kwargs) # Save the lease first
         
         if is_new and self.property_no:
@@ -68,5 +102,24 @@ class LeaseAgreement(models.Model):
             self.property_no.status = 'Rented' 
             self.property_no.save()
 
+    def update_deposit_status(self):
+        if not self.pk:
+            return
+            
+        from django.db import transaction
+        with transaction.atomic():
+            # Lock the lease for update to ensure concurrency safety
+            lease = LeaseAgreement.objects.select_for_update().get(pk=self.pk)
+            total_completed = lease.payments.filter(status='Completed').aggregate(
+                total=models.Sum('amount_paid')
+            )['total'] or 0
+            
+            is_paid = total_completed >= lease.deposit
+            if lease.deposit_paid != is_paid:
+                lease.deposit_paid = is_paid
+                lease.save(update_fields=['deposit_paid'])
+                # Also update the in-memory instance to reflect the DB change
+                self.deposit_paid = is_paid
+
     def __str__(self):
-        return f"Lease {self.lease_no} for {self.property.property_no}"
+        return f"Lease {self.lease_no} for {self.property_no.property_no}"
