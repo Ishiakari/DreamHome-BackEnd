@@ -144,6 +144,84 @@ class Client(models.Model):
     def __str__(self):
         return f"{self.client_no} - {self.first_name} {self.last_name} ({self.get_role_display()})"
 
+
+class HiringApplication(models.Model):
+    class Stage(models.TextChoices):
+        APPLIED = 'Applied', 'Applied'
+        SCREENING = 'Screening', 'Screening'
+        INTERVIEW = 'Interview', 'Interview'
+        OFFER = 'Offer', 'Offer'
+        HIRED = 'Hired', 'Hired'
+        REJECTED = 'Rejected', 'Rejected'
+
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    middle_name = models.CharField(max_length=100, blank=True, null=True)
+    suffixes = models.CharField(max_length=10, blank=True, null=True)
+    email = models.EmailField(max_length=255, unique=True)
+    telephone_no = models.CharField(max_length=50)
+    address = models.CharField(max_length=255)
+    sex = models.CharField(max_length=10, choices=SEX_CHOICES)
+    dob = models.DateField(verbose_name="Date of Birth")
+    nin = models.CharField(max_length=50, verbose_name="National Insurance Number")
+
+    position = models.CharField(
+        max_length=50,
+        choices=Staff.Position.choices,
+        help_text="Role being applied for."
+    )
+    branch = models.ForeignKey('branches.Branch', on_delete=models.PROTECT, related_name='hiring_applications')
+    preferred_start_date = models.DateField()
+    typing_speed = models.IntegerField(
+        blank=True,
+        null=True,
+        validators=[
+            MinValueValidator(10, message="Typing speed must be at least 10 WPM."),
+            MaxValueValidator(250, message="Typing speed cannot exceed 250 WPM.")
+        ],
+        help_text="Secretarial applicants only (Words Per Minute)."
+    )
+
+    notes = models.TextField(blank=True, null=True)
+    stage = models.CharField(max_length=20, choices=Stage.choices, default=Stage.APPLIED)
+    assigned_manager = models.ForeignKey(
+        'users.Staff',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='managed_applications'
+    )
+
+    rejected_reason = models.TextField(blank=True, null=True)
+    interview_date = models.DateField(blank=True, null=True)
+    offer_date = models.DateField(blank=True, null=True)
+    hired_date = models.DateField(blank=True, null=True)
+    reviewed_by = models.ForeignKey(
+        'users.Staff',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_applications'
+    )
+
+    # Next of Kin (Option B: prefixed columns)
+    nok_first_name = models.CharField(max_length=100, blank=True, null=True)
+    nok_last_name = models.CharField(max_length=100, blank=True, null=True)
+    nok_middle_name = models.CharField(max_length=100, blank=True, null=True)
+    nok_suffixes = models.CharField(max_length=10, blank=True, null=True)
+    nok_relationship = models.CharField(max_length=100, blank=True, null=True)
+    nok_address = models.CharField(max_length=255, blank=True, null=True)
+    nok_telephone_no = models.CharField(max_length=50, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'hiring_application'
+
+    def __str__(self):
+        return f"Hiring Application - {self.first_name} {self.last_name} ({self.position})"
+
 class RenterRequirement(models.Model):
     class PropertyType(models.TextChoices):
         HOUSE = 'House', 'House'
@@ -180,3 +258,5 @@ class NextOfKin(models.Model):
 def delete_related_user(sender, instance, **kwargs):
     if instance.user_no:
         instance.user_no.delete()
+        
+        
