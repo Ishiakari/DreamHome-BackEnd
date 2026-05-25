@@ -1,9 +1,10 @@
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, BasePermission, AllowAny
 
+from django.db.models.deletion import ProtectedError
 from .models import Client, Staff
 from .serializers import ClientSerializer, StaffSerializer, MyTokenObtainPairSerializer
 
@@ -84,6 +85,16 @@ class StaffDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "staff_no"
     permission_classes = [IsAdminRole]          # ✅ Only ADMIN can edit/delete staff
 
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError as e:
+            related_objects_str = ", ".join([str(obj) for obj in e.protected_objects])
+            return Response(
+                {"detail": f"Cannot delete staff account: It is linked to active records ({related_objects_str}). Please reassign or delete those records first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 # --- CLIENT VIEWS ---
 # Managers + Admins: full CRUD. Regular staff: read-only. Unauthenticated can POST (Sign Up).
@@ -108,6 +119,16 @@ class ClientDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ClientSerializer
     lookup_field = "client_no"
     permission_classes = [ReadOnlyOrManagerAdmin]  # ✅ Staff can view, Manager/Admin can edit
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError as e:
+            related_objects_str = ", ".join([str(obj) for obj in e.protected_objects])
+            return Response(
+                {"detail": f"Cannot delete account: It is linked to active records ({related_objects_str}). Please remove or update these records first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class PublicClientSignupView(generics.CreateAPIView):

@@ -1,5 +1,7 @@
-from rest_framework import generics, serializers
+from rest_framework import generics, serializers, status
 from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.response import Response
+from django.db.models.deletion import ProtectedError
 
 from .models import LeaseAgreement
 
@@ -85,3 +87,13 @@ class LeaseAgreementDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = LeaseAgreementSerializer
     lookup_field = "lease_no"
     permission_classes = [IsManagerOrAdmin]
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError as e:
+            related_objects_str = ", ".join([str(obj) for obj in e.protected_objects])
+            return Response(
+                {"detail": f"Cannot delete lease agreement: It has associated payments ({related_objects_str}). Please remove the payments first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )

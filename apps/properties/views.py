@@ -148,6 +148,45 @@ class PropertyForRentDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "property_no"
     permission_classes = [ReadOnlyOrAuthenticated]
 
+    def perform_update(self, serializer):
+        user = self.request.user
+        instance = self.get_object()
+        
+        new_status = serializer.validated_data.get("status")
+
+        if is_staff_user(user):
+            # Staff cannot manually mark a property as Rented unless it is already Rented
+            if new_status == "Rented" and instance.status != "Rented":
+                raise serializers.ValidationError({"detail": "You cannot manually mark a property as Rented. Please create a Lease Agreement instead."})
+        else:
+            client_profile = get_client_profile_or_error(user)
+            if instance.owner_no != client_profile:
+                raise serializers.ValidationError({"detail": "You do not have permission to edit this property."})
+
+            if new_status and new_status != instance.status:
+                if new_status == "Withdrawn":
+                    if instance.status not in ["Pending Approval", "Available", "Rejected"]:
+                        raise serializers.ValidationError({"detail": "You cannot withdraw a property that is already rented or withdrawn."})
+                elif new_status == "Pending Approval":
+                    if instance.status != "Rejected":
+                        raise serializers.ValidationError({"detail": "You can only re-submit rejected properties for approval."})
+                else:
+                    raise serializers.ValidationError({"detail": "You are not authorized to set this status."})
+
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        if not is_staff_user(user):
+            client_profile = get_client_profile_or_error(user)
+            if instance.owner_no != client_profile:
+                raise serializers.ValidationError({"detail": "You do not have permission to delete this property."})
+            
+            if instance.status == "Rented":
+                raise serializers.ValidationError({"detail": "You cannot delete a property that is currently rented."})
+                
+        instance.delete()
+
 
 class PropertyViewingListCreateView(generics.ListCreateAPIView):
     queryset = PropertyViewing.objects.select_related("property_no", "renter_no").all()
