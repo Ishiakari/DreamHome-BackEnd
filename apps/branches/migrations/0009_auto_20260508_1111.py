@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             DECLARE
                 v_manager_position TEXT;
             BEGIN
-                -- STEP 1: CLEANING (The "Guard" part)
+                -- CLEANING 
                 NEW.street   := btrim(NEW.street);
                 NEW.city     := initcap(btrim(NEW.city));
                 NEW.postcode := upper(btrim(NEW.postcode));
