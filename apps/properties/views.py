@@ -19,12 +19,43 @@ class PropertyForRentSerializer(serializers.ModelSerializer):
         # owner_no and staff_no are handled by perform_create logic.
         read_only_fields = ["property_no", "owner_no", "staff_no"]
 
+    def validate(self, attrs):
+        status = attrs.get("status")
+        if status == "Available":
+            if self.instance:
+                # If transitioning from another status to Available, check for completed inspection
+                if self.instance.status != "Available":
+                    has_completed = PropertyInspection.objects.filter(
+                        property_no=self.instance,
+                        status=PropertyInspection.InspectionStatus.COMPLETED
+                    ).exists()
+                    if not has_completed:
+                        raise serializers.ValidationError({
+                            "status": "Cannot approve property: A completed property inspection is required first."
+                        })
+            else:
+                # Cannot create a new property directly as Available since no inspection can exist yet
+                raise serializers.ValidationError({
+                    "status": "Cannot set status to Available during creation: A completed property inspection is required first."
+                })
+        return attrs
+
 
 class PropertyViewingSerializer(serializers.ModelSerializer):
     class Meta:
         model = PropertyViewing
         fields = "__all__"
         read_only_fields = ["decided_by", "decided_at"]
+
+    def validate(self, attrs):
+        # Only validate on creation
+        if not self.instance:
+            property_obj = attrs.get("property_no")
+            if property_obj and property_obj.status != "Available":
+                raise serializers.ValidationError({
+                    "property_no": "Viewings can only be scheduled for properties that are Available (inspected and approved)."
+                })
+        return attrs
 
     def to_representation(self, instance):# pyrefly: ignore 
         representation = super().to_representation(instance)
@@ -45,6 +76,14 @@ class PropertyInspectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PropertyInspection
         fields = "__all__"
+
+    def validate(self, attrs):
+        staff = attrs.get("staff_no")
+        if staff and staff.position != "Staff":
+            raise serializers.ValidationError({
+                "staff_no": f"Only staff members with the Standard Staff position can be assigned as inspectors (Selected: {staff.get_position_display()})."
+            })
+        return attrs
 
 
 class AdvertisementSerializer(serializers.ModelSerializer):
@@ -287,9 +326,17 @@ class PropertyInspectionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class AdvertisementListCreateView(generics.ListCreateAPIView):
-    queryset = Advertisement.objects.select_related("property_no", "assigned_by").all()
     serializer_class = AdvertisementSerializer
     permission_classes = [ReadOnlyOrAuthenticated]
+
+    def get_queryset(self):
+        queryset = Advertisement.objects.select_related("property_no", "assigned_by").all()
+        user = self.request.user
+        if not user or not user.is_authenticated or not is_staff_user(user):
+            from django.db.models import Q
+            queryset = queryset.filter(status="Active")
+            queryset = queryset.filter(Q(property_no__isnull=True) | Q(property_no__status="Available"))
+        return queryset
 
     def perform_create(self, serializer):
         staff_profile = getattr(self.request.user, "staff_profile", None)
@@ -297,6 +344,14 @@ class AdvertisementListCreateView(generics.ListCreateAPIView):
 
 
 class AdvertisementDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Advertisement.objects.select_related("property_no", "assigned_by").all()
     serializer_class = AdvertisementSerializer
     permission_classes = [ReadOnlyOrAuthenticated]
+
+    def get_queryset(self):
+        queryset = Advertisement.objects.select_related("property_no", "assigned_by").all()
+        user = self.request.user
+        if not user or not user.is_authenticated or not is_staff_user(user):
+            from django.db.models import Q
+            queryset = queryset.filter(status="Active")
+            queryset = queryset.filter(Q(property_no__isnull=True) | Q(property_no__status="Available"))
+        return queryset
