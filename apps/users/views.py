@@ -210,7 +210,7 @@ class HiringApplicationDetailView(generics.RetrieveUpdateDestroyAPIView):
             "dob": application.dob,
             "nin": application.nin,
             "position": application.position,
-            "salary": 0,
+            "salary": 30000 if application.position == Staff.Position.MANAGER else 0,
             "date_joined": application.preferred_start_date,
             "branch": application.branch.branch_no,
             "typing_speed": application.typing_speed if application.position == Staff.Position.SECRETARY else None,
