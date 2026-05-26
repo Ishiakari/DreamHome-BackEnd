@@ -27,7 +27,7 @@ class IsStaffOrAdmin(BasePermission):
     """Any logged-in staff member or superuser can access."""
     def has_permission(self, request, view):
         return request.user.is_authenticated and (
-            request.user.is_superuser or request.user.is_staff
+            request.user.is_superuser or request.user.is_staff or hasattr(request.user, 'staff_profile')
         )
 
 
@@ -128,6 +128,34 @@ class StaffDetailView(generics.RetrieveUpdateDestroyAPIView):
                 {"detail": f"Cannot delete staff account: It is linked to active records ({related_objects_str}). Please reassign or delete those records first."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+
+# --- STAFF PERFORMANCE REPORT ---
+class StaffPerformanceReportView(APIView):
+    permission_classes = [IsManagerOrAdmin]
+
+    def get(self, request):
+        branch_no = request.query_params.get("branch_no", None)
+        
+        # If user is a manager, optionally force it to their branch only
+        # Uncomment this to restrict managers to their own branch
+        # if not request.user.is_superuser:
+        #     if hasattr(request.user, 'staff_profile') and request.user.staff_profile.branch:
+        #         branch_no = request.user.staff_profile.branch.branch_no
+
+        with transaction.atomic():
+            with transaction.get_connection().cursor() as cursor:
+                cursor.execute(
+                    "SELECT * FROM get_staff_performance_report(%s)",
+                    [branch_no]
+                )
+                columns = [col[0] for col in cursor.description]
+                results = [
+                    dict(zip(columns, row))
+                    for row in cursor.fetchall()
+                ]
+                
+        return Response(results)
 
 
 # --- CLIENT VIEWS ---

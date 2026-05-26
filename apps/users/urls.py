@@ -10,6 +10,7 @@ urlpatterns = [
     
     # Staff URLs
     path("staff/", views.StaffListCreateView.as_view(), name="staff-list-create"),
+    path("staff/performance-report/", views.StaffPerformanceReportView.as_view(), name="staff-performance-report"),
     path("staff/<str:staff_no>/", views.StaffDetailView.as_view(), name="staff-detail"),
     
     # 🌟 Unified Client URLs (Handles both Renters and Owners)
